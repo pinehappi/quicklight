@@ -16,6 +16,14 @@ return {
 		return result.ok({ direction = dir } :: any)
 	end,
 	gizmo = function(initial, current, direction)
+		local horizontalDirection = function()
+			local result = direction():Cross(Vector3.new(0, 1, 0))
+			if math.abs(direction().Unit.Y) > 0.995 then
+				result = Vector3.new(1, 0, 0)
+			end
+			return result
+		end
+
 		return vide.create "Folder" {
 			arrowGizmo {
 				color = theme.accent.light,
@@ -32,17 +40,13 @@ return {
 			arrowGizmo {
 				color = theme.accent.light,
 				from = function()
-					return current().mousePosition
+					return current().mousePosition - 4*horizontalDirection()
 				end,
 				to = function()
-					local horizontalDirection = direction():Cross(Vector3.new(0, 1, 0))
-					if math.abs(direction().Unit.Y) > 0.995 then
-						horizontalDirection = Vector3.new(1, 0, 0)
-					end
-					return current().mousePosition - 4*horizontalDirection, current().mousePosition + 4*horizontalDirection
+					return current().mousePosition + 4*horizontalDirection()
 				end,
 				startRadius = 0,
-				endRadius = 0.5,
+				endRadius = 0,
 				thickness = 0.05,
 			}
 		}

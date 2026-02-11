@@ -1,7 +1,7 @@
 local vide = require(script.Parent.Parent.Packages.vide)
 export type Theme = {
     strokeThickness: number,
-    cornerRadius: {
+    radius: {
         base: number,
     },
     font: {
@@ -12,9 +12,9 @@ export type Theme = {
     },
     spacing: {
         xs: number,
-        s: number,
-        m: number,
-        l: number,
+        sm: number,
+        md: number,
+        lg: number,
         xl: number,
     },
     accent: {
@@ -37,7 +37,7 @@ local function getTheme(): Theme
     local theme = settings().Studio.Theme
     return {
         strokeThickness = 1,
-        cornerRadius = {
+        radius = {
             base = 4,
         },
         font = {
@@ -48,9 +48,9 @@ local function getTheme(): Theme
         },
         spacing = {
             xs = 2,
-            s = 4,
-            m = 6,
-            l = 8,
+            sm = 4,
+            md = 6,
+            lg = 8,
             xl = 10,
         },
         accent = {

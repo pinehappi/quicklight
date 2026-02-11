@@ -7,23 +7,23 @@ local destroy, theme = vide.root(function()
         strokeThickness = function()
             return themeSource().strokeThickness
         end,
-        cornerRadius = {
+        radius = {
             base = function()
-                return UDim.new(0, themeSource().cornerRadius.base)
+                return UDim.new(0, themeSource().radius.base)
             end,
         },
         spacing = {
             xs = function()
                 return themeSource().spacing.xs
             end,
-            s = function()
-                return themeSource().spacing.s
+            sm = function()
+                return themeSource().spacing.sm
             end,
-            m = function()
-                return themeSource().spacing.m
+            md = function()
+                return themeSource().spacing.md
             end,
-            l = function()
-                return themeSource().spacing.l
+            lg = function()
+                return themeSource().spacing.lg
             end,
             xl = function()
                 return themeSource().spacing.xl
@@ -33,14 +33,14 @@ local destroy, theme = vide.root(function()
             xs = function()
                 return UDim.new(0, themeSource().spacing.xs)
             end,
-            s = function()
-                return UDim.new(0, themeSource().spacing.s)
+            sm = function()
+                return UDim.new(0, themeSource().spacing.sm)
             end,
-            m = function()
-                return UDim.new(0, themeSource().spacing.m)
+            md = function()
+                return UDim.new(0, themeSource().spacing.md)
             end,
-            l = function()
-                return UDim.new(0, themeSource().spacing.l)
+            lg = function()
+                return UDim.new(0, themeSource().spacing.lg)
             end,
             xl = function()
                 return UDim.new(0, themeSource().spacing.xl)

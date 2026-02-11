@@ -45,7 +45,7 @@ return function(props: Props)
         AnchorPoint = Vector2.new(0.5, 0),
 
         vide.create "UICorner" {
-            CornerRadius = theme.cornerRadius.base,
+            CornerRadius = theme.radius.base,
         },
         
         vide.create "UIStroke" {
@@ -54,14 +54,14 @@ return function(props: Props)
         },
 
         vide.create "UIPadding" {
-            PaddingLeft = theme.padding.l,
-            PaddingRight = theme.padding.l,
-            PaddingTop = theme.padding.s,
-            PaddingBottom = theme.padding.s,
+            PaddingLeft = theme.padding.lg,
+            PaddingRight = theme.padding.lg,
+            PaddingTop = theme.padding.sm,
+            PaddingBottom = theme.padding.sm,
         },
 
         vide.create "UIListLayout" {
-            Padding = theme.padding.m,
+            Padding = theme.padding.md,
             FillDirection = Enum.FillDirection.Horizontal,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
             VerticalAlignment = Enum.VerticalAlignment.Center,
@@ -89,7 +89,7 @@ return function(props: Props)
         vide.create "Frame" {
             BackgroundColor3 = theme.surface0.stroke,
             Size = function()
-                return UDim2.fromOffset(1, theme.textSize.base() + theme.spacing.s())
+                return UDim2.fromOffset(1, theme.textSize.base() + theme.spacing.sm())
             end,
         },
 

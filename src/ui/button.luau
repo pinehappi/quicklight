@@ -75,14 +75,14 @@ return function(props: Props)
         end),
         
         vide.create "UIListLayout" {
-            Padding = theme.padding.m,
+            Padding = theme.padding.md,
             FillDirection = Enum.FillDirection.Horizontal,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
             VerticalAlignment = Enum.VerticalAlignment.Center,
         },
         
         vide.create "UICorner" {
-            CornerRadius = theme.cornerRadius.base,
+            CornerRadius = theme.radius.base,
         },
         
         vide.create "UIStroke" {
@@ -92,10 +92,10 @@ return function(props: Props)
         },
 
         vide.create "UIPadding" {
-            PaddingLeft = theme.padding.m,
-            PaddingRight = theme.padding.m,
-            PaddingTop = theme.padding.s,
-            PaddingBottom = theme.padding.s,
+            PaddingLeft = theme.padding.md,
+            PaddingRight = theme.padding.md,
+            PaddingTop = theme.padding.sm,
+            PaddingBottom = theme.padding.sm,
         },
 
         InputBegan = function(input: InputObject)
