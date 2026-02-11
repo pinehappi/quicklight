@@ -1,0 +1,9 @@
+{
+  "name": "lazylight",
+  "tree": {
+    "$path": "src",
+    "Packages": {
+      "$path": "Packages"
+    }
+  }
+}
