@@ -4,16 +4,16 @@ local icon = require(script.Parent.icon)
 local theme = require(script.Parent.theme)
 
 export type Props = {
-    placers: () -> {string},
-    activePlacer: () -> string?,
-    placerSelected: (string?) -> (),
+    tools: () -> {string},
+    activeTool: () -> string?,
+    toolSelected: (string?) -> (),
 
     lightSources: () -> {string},
     activeLightSource: () -> string,
     lightSourceSelected: (string) -> (),
 }
 
-local placerIcons = {
+local toolIcons = {
     direct = "rbxassetid://4827658474",
     line = "rbxassetid://17380139258",
     bounce = "rbxassetid://2714338256",
@@ -108,21 +108,21 @@ return function(props: Props)
                 VerticalAlignment = Enum.VerticalAlignment.Center,
             },
 
-            vide.values(props.placers, function(name, index)
+            vide.values(props.tools, function(name, index)
                 return button {
                     text = name,
                     icon = function(props)
                         return icon {
-                            image = placerIcons[name],
+                            image = toolIcons[name],
                             color = props.color,
                             size = theme.textSize.base,
                         }
                     end,
                     isSelecting = function()
-                        return props.activePlacer() == name
+                        return props.activeTool() == name
                     end,
                     activated = function()
-                        props.placerSelected(name)
+                        props.toolSelected(name)
                     end,
                     native = {
                         LayoutOrder = index,

@@ -3,12 +3,12 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
-local placers = require(script.Parent.Parent.placers)
+local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 local updateSkyFromDirection = require(script.Parent.Parent.utils.updateSkyFromDirection)
 local toolbar = require(script.Parent.toolbar)
 
-local function getPlaceState(): types.PlaceState
+local function getPlaceState(): types.ToolState
     local camera = workspace.CurrentCamera
     if not workspace.CurrentCamera then
         -- how?!?!
@@ -45,11 +45,11 @@ local function updateLightSource(name: string, direction: Vector3)
     end
 end
 
-local function usePlacerControls(on: () -> boolean, activeLightSource: () -> string, activePlacer: () -> string?)
+local function useToolControls(on: () -> boolean, activeLightSource: () -> string, activeTool: () -> string?)
     local currentPlacement = vide.source(nil :: {
-        placer: string,
-        initial: types.PlaceState,
-        current: (() -> types.PlaceState) & ((types.PlaceState) -> types.PlaceState),
+        tool: string,
+        initial: types.ToolState,
+        current: (() -> types.ToolState) & ((types.ToolState) -> types.ToolState),
         direction: (() -> Vector3) & ((Vector3) -> Vector3),
     }?)
 
@@ -57,13 +57,13 @@ local function usePlacerControls(on: () -> boolean, activeLightSource: () -> str
         local placement = currentPlacement()
         if not placement then return end
         
-        local placer = placers[placement.placer]
+        local tool = tools[placement.tool]
         local currentPlaceState = getPlaceState()
-        local result = placer.update({} :: any, placement.initial, currentPlaceState)
+        local result = tool.update({} :: any, placement.initial, currentPlaceState)
         placement.current(currentPlaceState)
 
         if result.kind == "success" then
-            local recording = commit and ChangeHistoryService:TryBeginRecording(`{activeLightSource()} {activePlacer()}`)
+            local recording = commit and ChangeHistoryService:TryBeginRecording(`{activeLightSource()} {activeTool()}`)
             if commit and not recording then return end
 
             placement.direction(result.data.direction)
@@ -89,8 +89,8 @@ local function usePlacerControls(on: () -> boolean, activeLightSource: () -> str
         if gpe then return end
         if not on() then return end
 
-        local placer = activePlacer()
-        if not placer then return end
+        local tool = activeTool()
+        if not tool then return end
         
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             local connection: RBXScriptConnection
@@ -104,7 +104,7 @@ local function usePlacerControls(on: () -> boolean, activeLightSource: () -> str
 
             local placeState = getPlaceState()
             currentPlacement({
-                placer = placer,
+                tool = tool,
                 initial = placeState,
                 -- TODO: does this get gc'ed?
                 current = vide.source(placeState),
@@ -117,10 +117,10 @@ local function usePlacerControls(on: () -> boolean, activeLightSource: () -> str
     vide.effect(function()
         local placement = currentPlacement()
         if placement then
-            local placer = placers[placement.placer]
-            if placer.gizmo then
+            local tool = tools[placement.tool]
+            if tool.gizmo then
                 local gizmo = vide.untrack(function()
-                    return placer.gizmo(placement.initial, placement.current, placement.direction) :: GuiObject
+                    return tool.gizmo(placement.initial, placement.current, placement.direction) :: GuiObject
                 end)
                 gizmo.Parent = CoreGui
 
@@ -158,8 +158,8 @@ local NUMBER_KEYCODES = {
 export type Props = {
     on: () -> boolean,
 
-    activePlacer: () -> string?,
-    placerSelected: (string?) -> (),
+    activeTool: () -> string?,
+    toolSelected: (string?) -> (),
 }
 
 return function(props: Props)
@@ -168,7 +168,7 @@ return function(props: Props)
         "sun",
         "moon",
     })
-    local placers = vide.source({
+    local tools = vide.source({
         "direct",
         "line",
         "face",
@@ -176,14 +176,14 @@ return function(props: Props)
         "shadow",
     })
 
-    usePlacerControls(props.on, activeLightSource, props.activePlacer)
+    useToolControls(props.on, activeLightSource, props.activeTool)
 
     vide.effect(function()
         if props.on() then
             vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
                 local number = NUMBER_KEYCODES[input.KeyCode]
-                if number and placers()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
-                    props.placerSelected(placers()[number])
+                if number and tools()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
+                    props.toolSelected(tools()[number])
                 elseif input.KeyCode == Enum.KeyCode.Tab then
                     local lightSourceIndex = table.find(lightSources(), activeLightSource())
                     if lightSourceIndex then
@@ -196,9 +196,9 @@ return function(props: Props)
 
     return {
         toolbar {
-            placers = placers,
-            activePlacer = props.activePlacer,
-            placerSelected = props.activePlacer,
+            tools = tools,
+            activeTool = props.activeTool,
+            toolSelected = props.toolSelected,
 
             lightSources = lightSources,
             activeLightSource = activeLightSource,

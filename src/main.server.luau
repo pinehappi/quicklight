@@ -11,15 +11,17 @@ gui.Name = NAME
 gui.Parent = game:GetService("CoreGui")
 
 local on = vide.source(false)
-local activePlacer = vide.source(nil :: string?)
+local activeTool = vide.source(nil :: string?)
 local unmount = vide.mount(function()
     vide.effect(function()
         pluginButton:SetActive(on())
     end)
 
     vide.effect(function()
-        if on() and activePlacer() then
+        if on() and activeTool() then
             plugin:Activate(true)
+        elseif on() and not activeTool() then
+            plugin:Deactivate()
         end
     end)
 
@@ -29,12 +31,12 @@ local unmount = vide.mount(function()
     
     return app {
         on = on,
-        activePlacer = activePlacer,
-        placerSelected = function(placer)
-            if activePlacer() == placer then
-                activePlacer(nil)
+        activeTool = activeTool,
+        toolSelected = function(tool)
+            if activeTool() == tool then
+                activeTool(nil)
             else
-                activePlacer(placer)
+                activeTool(tool)
             end
         end,
     }
@@ -42,14 +44,14 @@ end, gui)
 
 pluginButton.Click:Connect(function()
     on(not on())
-    if on() and activePlacer() == nil then
-        activePlacer("direct")
+    if on() and activeTool() == nil then
+        activeTool("direct")
     end
 end)
 
 plugin.Deactivation:Connect(function()
     if on() then
-        activePlacer(nil)
+        activeTool(nil)
     end
 end)
 

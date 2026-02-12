@@ -12,9 +12,9 @@ export type Cursor =
     | "NWSE"
     | nil
 
--- Placers
+-- Tools
 
-export type PlaceState = {
+export type ToolState = {
 	sunDirection: Vector3, 
 	moonDirection: Vector3, 
 	cameraPosition: Vector3,
@@ -27,13 +27,13 @@ export type PlaceState = {
     mouseNormal: Vector3?,
 }
 
-export type PlaceUpdate<T> = T & {
+export type ToolUpdate<T> = T & {
     direction: Vector3,
 }
 
-export type Placer<T = {}> = {
-	update: (LightSource, initial: PlaceState, current: PlaceState) -> result.Result<PlaceUpdate<T>, string>,
-    gizmo: ((initial: PlaceState, current: () -> PlaceState, direction: () -> Vector3) -> unknown)?,
+export type Tool<T = {}> = {
+	update: (LightSource, initial: ToolState, current: ToolState) -> result.Result<ToolUpdate<T>, string>,
+    gizmo: ((initial: ToolState, current: () -> ToolState, direction: () -> Vector3) -> unknown)?,
 }
 
 -- Light sources
@@ -42,7 +42,7 @@ export type LightSource = {
     new: () -> LightSource,
     updateDirection: (
         LightSource,
-		placeState: PlaceState,
+		placeState: ToolState,
 		direction: Vector3,
 		position: Vector3?,
 		angle: number? -- Angle for light objects

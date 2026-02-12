@@ -39,4 +39,4 @@ return {
 			thickness = 0.05,
 		}
 	end,
-} :: types.Placer
+} :: types.Tool

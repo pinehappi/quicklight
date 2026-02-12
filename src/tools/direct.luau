@@ -5,4 +5,4 @@ return {
 	update = function(lightSource, _, current)
 		return result.ok({ direction = current.mouseDirection } :: any)
 	end,
-} :: types.Placer
+} :: types.Tool

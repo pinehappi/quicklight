@@ -5,4 +5,4 @@ return {
     bounce = require(script.bounce),
     face = require(script.face),
     shadow = require(script.shadow),
-} :: {[string]: types.Placer}
+} :: {[string]: types.Tool}

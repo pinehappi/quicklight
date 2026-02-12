@@ -51,4 +51,4 @@ return {
 			}
 		}
 	end,
-} :: types.Placer
+} :: types.Tool
