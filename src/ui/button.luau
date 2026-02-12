@@ -7,6 +7,8 @@ export type Props = {
     isSelecting: boolean | (() -> boolean) | nil,
     
     activated: (() -> ()) | nil,
+
+    native: unknown,
 }
 
 return function(props: Props)
@@ -97,6 +99,8 @@ return function(props: Props)
             PaddingTop = theme.padding.sm,
             PaddingBottom = theme.padding.sm,
         },
+
+        props.native,
 
         InputBegan = function(input: InputObject)
             if input.UserInputType == Enum.UserInputType.MouseMovement then
