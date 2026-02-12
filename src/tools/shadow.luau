@@ -2,7 +2,7 @@ local types = require(script.Parent.Parent.types)
 local result = require(script.Parent.Parent.result)
 
 return {
-	update = function(lightSource, initial, current)
+	update = function(initial, current)
 		local lightDirection = initial.sunDirection
 		local wasMoonUp = (initial.sunDirection:Dot(Vector3.new(0, 1, 0))) < 0
 		if wasMoonUp then

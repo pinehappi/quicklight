@@ -1,4 +1,5 @@
 local CoreGui = game:GetService("CoreGui")
+local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local runTool = require(script.Parent.Parent.core.runTool)
@@ -7,7 +8,12 @@ local types = require(script.Parent.Parent.types)
 local toolbar = require(script.Parent.toolbar)
 
 -- connects events and wires up tools
-local function useTool(on: () -> boolean, activeLightSource: () -> string, activeTool: () -> string?)
+local function useTool(
+    on: () -> boolean,
+    lightSource: () -> string,
+    tool: () -> string?,
+    lightSourceObject: () -> types.LightSourceObject?
+)
     local currentUsing = vide.source(nil :: {
         activity: types.ToolActivity,
         update: (commit: boolean) -> (),
@@ -17,11 +23,11 @@ local function useTool(on: () -> boolean, activeLightSource: () -> string, activ
         if gpe then return end
         if not on() then return end
 
-        local tool = activeTool()
+        local tool = tool()
         if not tool then return end
         
         if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentUsing()) then
-            local activity, update = runTool(tool, activeLightSource())
+            local activity, update = runTool(tool, lightSource(), lightSourceObject())
             local connection: RBXScriptConnection
             connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
                 if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
@@ -91,10 +97,10 @@ local NUMBER_KEYCODES = {
 local function useHotkeys(options: {
     on: () -> boolean,
     lightSources: () -> {string},
-    activeLightSource: () -> string,
+    lightSource: () -> string,
     lightSourceSelected: (string) -> (),
     tools: () -> {string},
-    activeTool: () -> string?,
+    tool: () -> string?,
     toolSelected: (string?) -> ()
 })
      vide.effect(function()
@@ -104,7 +110,7 @@ local function useHotkeys(options: {
                 if number and options.tools()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
                     options.toolSelected(options.tools()[number])
                 elseif input.KeyCode == Enum.KeyCode.Tab then
-                    local lightSourceIndex = table.find(options.lightSources(), options.activeLightSource())
+                    local lightSourceIndex = table.find(options.lightSources(), options.lightSource())
                     if lightSourceIndex then
                         options.lightSourceSelected(options.lightSources()[lightSourceIndex % #options.lightSources() + 1])
                     end
@@ -114,48 +120,153 @@ local function useHotkeys(options: {
     end)
 end
 
+-- handling tracking object for "object" mode
+local function useLightSourceSelection(
+    on: () -> boolean,
+    lightSource: () -> string,
+    lightSourceObject: (() -> types.LightSourceObject?) & ((types.LightSourceObject?) -> types.LightSourceObject?)
+)
+    -- TODO: handle the light source object container changing
+    vide.effect(function()
+        if on() and lightSource() == "object" then
+            local function updateObject()
+                local selection = Selection:Get()
+                if #selection ~= 1 then return end
+
+                local object = selection[1]
+                if not object:IsA("Light") and not object:IsA("BasePart") and not object:IsA("Attachment") then
+                    return
+                end
+
+                local container: Attachment | BasePart | nil
+                local light: Light?
+                if object:IsA("Light") then
+                    if object.Parent and object.Parent:IsA("BasePart") or object.Parent:IsA("Attachment") then
+                        container = object.Parent
+                    end
+                    light = object
+                else
+                    container = object
+                    light = object:FindFirstChildWhichIsA("Light")
+                end
+
+                if container and light then
+                    local currentObject = lightSourceObject()
+                    if currentObject and currentObject.light == light and (currentObject.container :: any) == container then
+                        return
+                    end
+
+                    lightSourceObject({
+                        container = container,
+                        light = light,
+                    })
+                end
+            end
+
+            vide.cleanup(Selection.Changed:Connect(updateObject))
+            updateObject()
+        end
+    end)
+end
+
 export type Props = {
     on: () -> boolean,
-
-    activeTool: () -> string?,
-    toolSelected: (string?) -> (),
+    onChanged: (boolean) -> (),
+    plugin: Plugin,
+    pluginButton: PluginToolbarButton,
 }
 
 return function(props: Props)
-    local activeLightSource = vide.source("sun")
+    local lightSource = vide.source("sun")
     local lightSources = vide.source({
+        "object",
         "sun",
         "moon",
     })
-    local tools = vide.source({
-        "direct",
-        "line",
-        "face",
-        "bounce",
-        "shadow",
-    })
+    local lightSourceObject = vide.source(nil :: types.LightSourceObject?)
 
-    useTool(props.on, activeLightSource, props.activeTool)
+    local tools = vide.derive(function()
+        return
+            if lightSource() == "object" then {
+                "direct",
+                "line",
+                "face",
+                "bounce",
+                "shadow",
+            } else {
+                "direct",
+                "line",
+                "bounce",
+            }
+    end)
+
+    -- one source for the "backing" value, one for the exposed value that handles the tool no longer being available
+    local toolBacking = vide.source("direct" :: string?)
+    local tool = vide.derive(function(): string?
+        if not table.find(tools(), toolBacking()) then
+            return tools()[1]
+        else
+            return toolBacking()
+        end
+    end)
+
+    local function toolSelected(newTool)
+        if tool() == newTool then
+            toolBacking(nil)
+        else
+            toolBacking(newTool)
+        end
+    end
+
+    vide.effect(function()
+        props.pluginButton:SetActive(props.on())
+    end)
+
+    vide.effect(function()
+        if props.on() and tool() then
+            props.plugin:Activate(true)
+        elseif props.on() and not tool() then
+            props.plugin:Deactivate()
+        end
+    end)
+
+    vide.cleanup(props.pluginButton.Click:Connect(function()
+        props.onChanged(not props.on())
+        if props.on() and tool() == nil then
+            toolBacking(tools()[1])
+        end
+    end))
+
+    vide.cleanup(props.plugin.Deactivation:Connect(function()
+        if props.on() then
+            toolBacking(nil)
+        end
+    end))
+
+    useTool(props.on, lightSource, tool, lightSourceObject)
+
+    useLightSourceSelection(props.on, lightSource, lightSourceObject)
 
     useHotkeys({
         on = props.on,
         lightSources = lightSources,
-        activeLightSource = activeLightSource,
-        lightSourceSelected = activeLightSource,
+        lightSource = lightSource,
+        lightSourceSelected = lightSource,
         tools = tools,
-        activeTool = props.activeTool,
-        toolSelected = props.toolSelected,
+        tool = tool,
+        toolSelected = toolSelected,
     })
+
    
     return {
         toolbar {
             tools = tools,
-            activeTool = props.activeTool,
-            toolSelected = props.toolSelected,
+            tool = tool,
+            toolSelected = toolSelected,
 
             lightSources = lightSources,
-            activeLightSource = activeLightSource,
-            lightSourceSelected = activeLightSource,
+            lightSource = lightSource,
+            lightSourceSelected = lightSource,
         },
     }
 end

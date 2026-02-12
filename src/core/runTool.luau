@@ -44,12 +44,17 @@ local function updateLightSource(name: string, direction: Vector3)
 end
 
 -- returns a ToolActivity and a function to update it
-return function(toolName: string, lightSourceName: string): (types.ToolActivity, (commit: boolean) -> ())
+return function(
+    toolName: string,
+    lightSourceName: string,
+    lightSourceObject: types.LightSourceObject?
+): (types.ToolActivity, (commit: boolean) -> ())
     local toolState = getToolState()
     local tool = tools[toolName]
     local activity: types.ToolActivity = {
         tool = toolName,
         lightSource = lightSourceName,
+        object = lightSourceName == "object" and lightSourceObject or nil,
         initial = toolState,
         current = vide.source(toolState),
         direction = vide.source(Vector3.new(0, 0, 0)),
@@ -57,7 +62,7 @@ return function(toolName: string, lightSourceName: string): (types.ToolActivity,
     
     return activity, function(commit: boolean)
         local currentPlaceState = getToolState()
-        local result = tool.update({} :: any, activity.initial, currentPlaceState)
+        local result = tool.update(activity.initial, currentPlaceState, activity.object)
         activity.current(currentPlaceState)
 
         if result.kind == "success" then

@@ -3,16 +3,6 @@ local button = require(script.Parent.base.button)
 local icon = require(script.Parent.base.icon)
 local theme = require(script.Parent.theme)
 
-export type Props = {
-    tools: () -> {string},
-    activeTool: () -> string?,
-    toolSelected: (string?) -> (),
-
-    lightSources: () -> {string},
-    activeLightSource: () -> string,
-    lightSourceSelected: (string) -> (),
-}
-
 local toolIcons = {
     direct = "rbxassetid://4827658474",
     line = "rbxassetid://17380139258",
@@ -24,6 +14,16 @@ local toolIcons = {
 local lightSourceIcons = {
     sun = "rbxassetid://17650932353",
     moon = "rbxassetid://17650930453",
+}
+
+export type Props = {
+    tools: () -> {string},
+    tool: () -> string?,
+    toolSelected: (string?) -> (),
+
+    lightSources: () -> {string},
+    lightSource: () -> string,
+    lightSourceSelected: (string) -> (),
 }
 
 return function(props: Props)
@@ -77,7 +77,7 @@ return function(props: Props)
                         }
                     end,
                     isSelecting = function()
-                        return props.activeLightSource() == name
+                        return props.lightSource() == name
                     end,
                     activated = function()
                         props.lightSourceSelected(name)
@@ -119,7 +119,7 @@ return function(props: Props)
                         }
                     end,
                     isSelecting = function()
-                        return props.activeTool() == name
+                        return props.tool() == name
                     end,
                     activated = function()
                         props.toolSelected(name)

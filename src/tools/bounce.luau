@@ -6,7 +6,7 @@ local theme = require(script.Parent.Parent.ui.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
 return {
-	update = function(lightSource, _, current)
+	update = function(_, current)
 		local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
 		local dir = CFrame.lookAt(
 			current.mousePosition,

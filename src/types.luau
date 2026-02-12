@@ -32,7 +32,7 @@ export type ToolUpdate<T> = T & {
 }
 
 export type Tool<T = {}> = {
-	update: (LightSource, initial: ToolState, current: ToolState) -> result.Result<ToolUpdate<T>, string>,
+	update: (initial: ToolState, current: ToolState, LightSourceObject?) -> result.Result<ToolUpdate<T>, string>,
     gizmo: ((initial: ToolState, current: () -> ToolState, direction: () -> Vector3) -> unknown)?,
 }
 
@@ -40,24 +40,15 @@ export type ToolActivity = {
     tool: string,
     lightSource: string,
     initial: ToolState,
+    object: LightSourceObject?,
     -- sources
     current: (() -> ToolState) & ((ToolState) -> ToolState),
     direction: (() -> Vector3) & ((Vector3) -> Vector3),
 }
 
--- Light sources
-
-export type LightSource = {
-    new: () -> LightSource,
-    updateDirection: (
-        LightSource,
-		placeState: ToolState,
-		direction: Vector3,
-		position: Vector3?,
-		angle: number? -- Angle for light objects
-    ) -> (),
-    getFilter: (LightSource) -> {Instance}?,
-    destroy: (LightSource) -> (),
+export type LightSourceObject = {
+    container: Attachment | BasePart,
+    light: Light,
 }
 
 return {}

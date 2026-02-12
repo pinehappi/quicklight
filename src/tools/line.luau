@@ -4,7 +4,7 @@ local arrowGizmo = require(script.Parent.Parent.ui.gizmos.arrowGizmo)
 local theme = require(script.Parent.Parent.ui.theme)
 
 return {
-	update = function(lightSource, initial, current)
+	update = function(initial, current)
 		local dir = CFrame.lookAt(
 			current.mousePosition,
 			initial.mousePosition

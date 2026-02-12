@@ -11,49 +11,18 @@ gui.Name = NAME
 gui.Parent = game:GetService("CoreGui")
 
 local on = vide.source(false)
-local activeTool = vide.source(nil :: string?)
 local unmount = vide.mount(function()
-    vide.effect(function()
-        pluginButton:SetActive(on())
-    end)
-
-    vide.effect(function()
-        if on() and activeTool() then
-            plugin:Activate(true)
-        elseif on() and not activeTool() then
-            plugin:Deactivate()
-        end
-    end)
-
     vide.effect(function()
         gui.Enabled = on()
     end)
     
     return app {
         on = on,
-        activeTool = activeTool,
-        toolSelected = function(tool)
-            if activeTool() == tool then
-                activeTool(nil)
-            else
-                activeTool(tool)
-            end
-        end,
+        onChanged = on,
+        plugin = plugin,
+        pluginButton = pluginButton,
     }
 end, gui)
-
-pluginButton.Click:Connect(function()
-    on(not on())
-    if on() and activeTool() == nil then
-        activeTool("direct")
-    end
-end)
-
-plugin.Deactivation:Connect(function()
-    if on() then
-        activeTool(nil)
-    end
-end)
 
 plugin.Unloading:Connect(function()
     unmount()

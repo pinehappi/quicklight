@@ -5,7 +5,7 @@ local theme = require(script.Parent.Parent.ui.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
 return {
-	update = function(lightSource, initial, current)
+	update = function(_, current)
 		local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
 
 		if not current.mouseNormal then
