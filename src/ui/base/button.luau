@@ -1,5 +1,5 @@
-local vide = require(script.Parent.Parent.Packages.vide)
-local theme = require(script.Parent.theme)
+local vide = require(script.Parent.Parent.Parent.Packages.vide)
+local theme = require(script.Parent.Parent.theme)
 
 export type Props = {
     text: string | (() -> string | nil) | nil,

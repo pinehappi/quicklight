@@ -43,20 +43,11 @@ local function updateLightSource(name: string, direction: Vector3)
     end
 end
 
-export type ToolActivity = {
-    tool: string,
-    lightSource: string,
-    initial: types.ToolState,
-    -- sources
-    current: (() -> types.ToolState) & ((types.ToolState) -> types.ToolState),
-    direction: (() -> Vector3) & ((Vector3) -> Vector3),
-}
-
 -- returns a ToolActivity and a function to update it
-return function(toolName: string, lightSourceName: string)
+return function(toolName: string, lightSourceName: string): (types.ToolActivity, (commit: boolean) -> ())
     local toolState = getToolState()
     local tool = tools[toolName]
-    local activity: ToolActivity = {
+    local activity: types.ToolActivity = {
         tool = toolName,
         lightSource = lightSourceName,
         initial = toolState,

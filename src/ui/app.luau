@@ -3,11 +3,13 @@ local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local runTool = require(script.Parent.Parent.core.runTool)
 local tools = require(script.Parent.Parent.tools)
+local types = require(script.Parent.Parent.types)
 local toolbar = require(script.Parent.toolbar)
 
+-- connects events and wires up tools
 local function useTool(on: () -> boolean, activeLightSource: () -> string, activeTool: () -> string?)
     local currentUsing = vide.source(nil :: {
-        activity: runTool.ToolActivity,
+        activity: types.ToolActivity,
         update: (commit: boolean) -> (),
     }?)
 
@@ -85,6 +87,33 @@ local NUMBER_KEYCODES = {
     [Enum.KeyCode.Five] = 5,
 }
 
+-- light source + tool selecting hotkeys
+local function useHotkeys(options: {
+    on: () -> boolean,
+    lightSources: () -> {string},
+    activeLightSource: () -> string,
+    lightSourceSelected: (string) -> (),
+    tools: () -> {string},
+    activeTool: () -> string?,
+    toolSelected: (string?) -> ()
+})
+     vide.effect(function()
+        if options.on() then
+            vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
+                local number = NUMBER_KEYCODES[input.KeyCode]
+                if number and options.tools()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
+                    options.toolSelected(options.tools()[number])
+                elseif input.KeyCode == Enum.KeyCode.Tab then
+                    local lightSourceIndex = table.find(options.lightSources(), options.activeLightSource())
+                    if lightSourceIndex then
+                        options.lightSourceSelected(options.lightSources()[lightSourceIndex % #options.lightSources() + 1])
+                    end
+                end
+            end))
+        end
+    end)
+end
+
 export type Props = {
     on: () -> boolean,
 
@@ -108,22 +137,16 @@ return function(props: Props)
 
     useTool(props.on, activeLightSource, props.activeTool)
 
-    vide.effect(function()
-        if props.on() then
-            vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
-                local number = NUMBER_KEYCODES[input.KeyCode]
-                if number and tools()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
-                    props.toolSelected(tools()[number])
-                elseif input.KeyCode == Enum.KeyCode.Tab then
-                    local lightSourceIndex = table.find(lightSources(), activeLightSource())
-                    if lightSourceIndex then
-                        activeLightSource(lightSources()[lightSourceIndex % #lightSources() + 1])
-                    end
-                end
-            end))
-        end
-    end)
-
+    useHotkeys({
+        on = props.on,
+        lightSources = lightSources,
+        activeLightSource = activeLightSource,
+        lightSourceSelected = activeLightSource,
+        tools = tools,
+        activeTool = props.activeTool,
+        toolSelected = props.toolSelected,
+    })
+   
     return {
         toolbar {
             tools = tools,

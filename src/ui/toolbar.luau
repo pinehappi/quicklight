@@ -1,6 +1,6 @@
 local vide = require(script.Parent.Parent.Packages.vide)
-local button = require(script.Parent.button)
-local icon = require(script.Parent.icon)
+local button = require(script.Parent.base.button)
+local icon = require(script.Parent.base.icon)
 local theme = require(script.Parent.theme)
 
 export type Props = {

@@ -1,4 +1,4 @@
-local vide = require(script.Parent.Parent.Packages.vide)
+local vide = require(script.Parent.Parent.Parent.Packages.vide)
 export type Props = {
     image: string,
     color: Color3 | () -> Color3,
