@@ -14,7 +14,7 @@ local function useTool(
     tool: () -> string?,
     lightSourceObject: () -> types.LightSourceObject?
 )
-    local currentUsing = vide.source(nil :: {
+    local currentAction = vide.source(nil :: {
         activity: types.ToolActivity,
         update: (commit: boolean) -> (),
     }?)
@@ -26,21 +26,21 @@ local function useTool(
         local tool = tool()
         if not tool then return end
         
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentUsing()) then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentAction()) then
             local activity, update = runTool(tool, lightSource(), lightSourceObject())
             local connection: RBXScriptConnection
             connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
                 if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
                     connection:Disconnect()
-                    local newCurrent = currentUsing()
-                    if newCurrent and newCurrent.activity == activity then
+                    local newAction = currentAction()
+                    if newAction and newAction.activity == activity then
                         update(true)
-                        currentUsing(nil)
+                        currentAction(nil)
                     end
                 end
             end)
 
-            currentUsing({
+            currentAction({
                 activity = activity,
                 update = update,
             })
@@ -49,38 +49,38 @@ local function useTool(
     end))
 
     vide.effect(function()
-        local using = currentUsing()
-        if using then
-            local tool = tools[using.activity.tool]
-            if tool.gizmo then
-                local gizmo = vide.untrack(function()
-                    return tool.gizmo(using.activity.initial, using.activity.current, using.activity.direction) :: GuiObject
-                end)
-                gizmo.Parent = CoreGui
+        local action = currentAction()
+        if not action then return end
 
-                vide.cleanup(gizmo)
+        local tool = tools[action.activity.tool]
+        if tool.gizmo then
+            local gizmo = vide.untrack(function()
+                return tool.gizmo(action.activity.initial, action.activity.current, action.activity.direction) :: GuiObject
+            end)
+            gizmo.Parent = CoreGui
+
+            vide.cleanup(gizmo)
+        end
+
+        vide.cleanup(UserInputService.InputChanged:Connect(function(input)
+            if not on() then return end
+
+            local action = currentAction()
+            if input.UserInputType == Enum.UserInputType.MouseMovement and action then
+                action.update(false)
             end
+        end))
 
-            vide.cleanup(UserInputService.InputChanged:Connect(function(input)
+        local camera = workspace.CurrentCamera
+        if camera then
+            vide.cleanup(camera:GetPropertyChangedSignal("CFrame"):Connect(function(input)
                 if not on() then return end
 
-                local using = currentUsing()
-                if input.UserInputType == Enum.UserInputType.MouseMovement and using then
-                    using.update(false)
+                local action = currentAction()
+                if action then
+                    action.update(false)
                 end
             end))
-
-            local camera = workspace.CurrentCamera
-            if camera then
-                vide.cleanup(camera:GetPropertyChangedSignal("CFrame"):Connect(function(input)
-                    if not on() then return end
-
-                    local using = currentUsing()
-                    if using then
-                        using.update(false)
-                    end
-                end))
-            end
         end
     end)
 end
@@ -256,7 +256,6 @@ return function(props: Props)
         tool = tool,
         toolSelected = toolSelected,
     })
-
    
     return {
         toolbar {

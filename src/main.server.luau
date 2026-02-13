@@ -1,10 +1,10 @@
 local NAME = "lazylight"
 
 local vide = require(script.Parent.Packages.vide)
-local app = require(script.Parent.ui.app)
+local app = require(script.Parent.app.app)
 
 local pluginToolbar = plugin:CreateToolbar(NAME)
-local pluginButton = pluginToolbar:CreateButton(NAME, "activate lazylight", "")
+local pluginButton = pluginToolbar:CreateButton(NAME, `activate {NAME}`, "")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = NAME

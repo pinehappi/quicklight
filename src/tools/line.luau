@@ -1,7 +1,7 @@
 local result = require(script.Parent.Parent.result)
 local types = require(script.Parent.Parent.types)
-local arrowGizmo = require(script.Parent.Parent.ui.gizmos.arrowGizmo)
-local theme = require(script.Parent.Parent.ui.theme)
+local arrowGizmo = require(script.Parent.Parent.app.gizmos.arrowGizmo)
+local theme = require(script.Parent.Parent.app.theme)
 
 return {
 	update = function(initial, current)

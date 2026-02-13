@@ -115,7 +115,7 @@ local destroy, theme = vide.root(function()
                     return themeSource().button.stroke
                 end,
                 press = vide.derive(function()
-                    return Oklab.mix(themeSource().button.stroke, themeSource().surface0.stroke, 0.1)
+                    return Oklab.mix(themeSource().button.stroke, themeSource().surface0.background, 0.1)
                 end),
                 select = function()
                     return themeSource().accent.main
