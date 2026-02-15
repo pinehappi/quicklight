@@ -223,14 +223,14 @@ return function(props: Props)
     -- one source for the "backing" value, one for the exposed value that handles the tool no longer being available
     local toolBacking = vide.source("direct" :: string?)
     local tool = vide.derive(function(): string?
-        if not table.find(tools(), toolBacking()) then
+        if toolBacking() and not table.find(tools(), toolBacking()) then
             return tools()[1]
         else
             return toolBacking()
         end
     end)
 
-    local function toolSelected(newTool)
+    local function handleToolSelected(newTool)
         if tool() == newTool then
             toolBacking(nil)
         else
@@ -238,7 +238,7 @@ return function(props: Props)
         end
     end
 
-    local isToolInUse = useTool(props.on, lightSource, tool, lightSourceObject)
+    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject)
 
     useLightSourceSelection(props.on, lightSource, lightSourceObject)
 
@@ -249,7 +249,7 @@ return function(props: Props)
         lightSourceSelected = lightSource,
         tools = tools,
         tool = tool,
-        toolSelected = toolSelected,
+        toolSelected = handleToolSelected,
     })
 
     vide.effect(function()
@@ -279,13 +279,13 @@ return function(props: Props)
 
     return {
         fadeFrame {
-            transparency = tween(function() return isToolInUse() and 0.5 or 0 end, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0.15),
-            position = vide.spring(function() return isToolInUse() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.3, 0.7),
+            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0.15),
+            position = vide.spring(function() return isUsingTool() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.3, 0.7),
             size = UDim2.new(1, 0, 0, 300),
             child = toolbar {
                 tools = tools,
                 tool = tool,
-                toolSelected = toolSelected,
+                toolSelected = handleToolSelected,
 
                 lightSources = lightSources,
                 lightSource = lightSource,

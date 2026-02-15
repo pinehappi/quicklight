@@ -1,3 +1,5 @@
+-- canvasgroup that only switches when grouptransparency is on
+
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
 export type Props = {
     transparency: () -> number,
