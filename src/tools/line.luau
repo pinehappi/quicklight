@@ -14,7 +14,7 @@ return {
 	end,
 	gizmo = function(initial, current)
 		return arrowGizmo {
-			color = theme.accent.light,
+			color = theme.accent.faint,
 			from = initial.mousePosition,
 			to = function()
 				return current().mousePosition

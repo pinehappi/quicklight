@@ -15,9 +15,24 @@ local function useTool(
     lightSourceObject: () -> types.LightSourceObject?
 )
     local currentAction = vide.source(nil :: {
-        activity: types.ToolActivity,
-        update: (commit: boolean) -> (),
+        tool: string,
+        initialState: types.ToolState,
+        update: runTool.UpdateToolCallback,
+        -- sources
+        currentState: (() -> types.ToolState) & ((types.ToolState) -> ()),
+        direction: (() -> Vector3) & ((Vector3) -> ()),
     }?)
+
+    local function tryUpdate(commit: boolean)
+        local action = currentAction()
+        if action then
+            local result = action.update(commit)
+            if result.kind == "success" then
+                action.currentState(result.data.currentState)
+                action.direction(result.data.direction)
+            end
+        end
+    end
 
     vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
@@ -27,24 +42,27 @@ local function useTool(
         if not tool then return end
         
         if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentAction()) then
-            local activity, update = runTool(tool, lightSource(), lightSourceObject())
+            local initialState, update = runTool(tool, lightSource(), lightSourceObject())
             local connection: RBXScriptConnection
             connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
                 if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
                     connection:Disconnect()
                     local newAction = currentAction()
-                    if newAction and newAction.activity == activity then
-                        update(true)
+                    if newAction and newAction.initialState == initialState then
+                        tryUpdate(true)
                         currentAction(nil)
                     end
                 end
             end)
 
             currentAction({
-                activity = activity,
+                tool = tool,
+                initialState = initialState,
+                currentState = vide.source(initialState),
+                direction = vide.source(Vector3.zero),
                 update = update,
             })
-            update(false)
+            tryUpdate(false)
         end
     end))
 
@@ -52,10 +70,10 @@ local function useTool(
         local action = currentAction()
         if not action then return end
 
-        local tool = tools[action.activity.tool]
+        local tool = tools[action.tool]
         if tool.gizmo then
             local gizmo = vide.untrack(function()
-                return tool.gizmo(action.activity.initial, action.activity.current, action.activity.direction) :: GuiObject
+                return tool.gizmo(action.initialState, action.currentState, action.direction) :: GuiObject
             end)
             gizmo.Parent = CoreGui
 
@@ -65,9 +83,8 @@ local function useTool(
         vide.cleanup(UserInputService.InputChanged:Connect(function(input)
             if not on() then return end
 
-            local action = currentAction()
-            if input.UserInputType == Enum.UserInputType.MouseMovement and action then
-                action.update(false)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                tryUpdate(false)
             end
         end))
 
@@ -76,10 +93,7 @@ local function useTool(
             vide.cleanup(camera:GetPropertyChangedSignal("CFrame"):Connect(function(input)
                 if not on() then return end
 
-                local action = currentAction()
-                if action then
-                    action.update(false)
-                end
+                tryUpdate(false)
             end))
         end
     end)
@@ -194,7 +208,7 @@ return function(props: Props)
                 "bounce",
                 "shadow",
             } else {
-                "direct",
+                "face",
                 "line",
                 "bounce",
             }

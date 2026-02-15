@@ -26,7 +26,7 @@ return {
 
 		return vide.create "Folder" {
 			arrowGizmo {
-				color = theme.accent.light,
+				color = theme.accent.faint,
 				from = function()
 					return current().mousePosition
 				end,
@@ -38,7 +38,7 @@ return {
 				thickness = 0.05,
 			},
 			arrowGizmo {
-				color = theme.accent.light,
+				color = theme.accent.faint,
 				from = function()
 					return current().mousePosition - 4*horizontalDirection()
 				end,

@@ -9,7 +9,7 @@ return {
             data = data,
         }
     end,
-    err = function<T>(err: T)
+    error = function<T>(err: T)
         return {
             kind = "error" :: "error",
             error = err,

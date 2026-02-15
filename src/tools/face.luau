@@ -9,7 +9,7 @@ return {
 		local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
 
 		if not current.mouseNormal then
-			return result.err("Cursor must be on a face!")
+			return result.error("Cursor must be on a face!")
 		end
 
 		local reflection = reflect(rayDirection.LookVector, current.mouseNormal)
@@ -22,7 +22,7 @@ return {
 	end,
 	gizmo = function(initial, current, direction)
 		return arrowGizmo {
-			color = theme.accent.light,
+			color = theme.accent.faint,
 			from = function()
 				return current().mousePosition
 			end,

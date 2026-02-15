@@ -68,7 +68,7 @@ local destroy, theme = vide.root(function()
             end
         },
         accent = {
-            light = function()
+            faint = function()
                 return Oklab.mix(themeSource().accent.main, Color3.new(1, 1, 1), 0.5)
             end,
             main = function()

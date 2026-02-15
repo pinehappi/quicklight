@@ -1,10 +1,9 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
-local vide = require(script.Parent.Parent.Packages.vide)
+local result = require(script.Parent.Parent.result)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
-local updateSkyFromDirection = require(script.Parent.Parent.utils.updateSkyFromDirection)
 
 local function getToolState(): types.ToolState
     local camera = workspace.CurrentCamera
@@ -35,6 +34,17 @@ local function getToolState(): types.ToolState
 	}
 end
 
+local function updateSkyFromDirection(direction: Vector3, longitudeFactor: number)
+    local latitude = math.atan2(direction.Z, math.sqrt(direction.X^2 + direction.Y^2))
+	local longitude = math.atan2(direction.Y * longitudeFactor, direction.X * longitudeFactor)
+
+	local geographicLatitude = (latitude / math.pi / 2) * 360 + 23.5
+	local clockTime = (longitude / math.pi / 2) * 24 - 6
+
+	Lighting.ClockTime = clockTime % 24
+	Lighting.GeographicLatitude = geographicLatitude 
+end
+
 local function updateLightSource(name: string, direction: Vector3)
     if name == "sun" then
         updateSkyFromDirection(direction, -1)
@@ -43,36 +53,33 @@ local function updateLightSource(name: string, direction: Vector3)
     end
 end
 
+export type UpdateToolResult = {
+    currentState: types.ToolState,
+    direction: Vector3,
+}
+
+export type UpdateToolCallback = (commit: boolean) -> result.Result<UpdateToolResult, string>
+
 -- returns a ToolActivity and a function to update it
 return function(
     toolName: string,
     lightSourceName: string,
     lightSourceObject: types.LightSourceObject?
-): (types.ToolActivity, (commit: boolean) -> ())
-    local toolState = getToolState()
+): (types.ToolState, UpdateToolCallback)
     local tool = tools[toolName]
-    local activity: types.ToolActivity = {
-        tool = toolName,
-        lightSource = lightSourceName,
-        object = lightSourceName == "object" and lightSourceObject or nil,
-        initial = toolState,
-        current = vide.source(toolState),
-        direction = vide.source(Vector3.new(0, 0, 0)),
-    }
+    local initial = getToolState()
+    local object = lightSourceName == "object" and lightSourceObject or nil
     
-    return activity, function(commit: boolean)
-        local currentPlaceState = getToolState()
-        local result = tool.update(activity.initial, currentPlaceState, activity.object)
-        activity.current(currentPlaceState)
+    return initial, function(commit: boolean)
+        local current = getToolState()
+        local updateResult = tool.update(initial, current, object)
 
-        if result.kind == "success" then
+        if updateResult.kind == "success" then
             local recording = commit and ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
-            if commit and not recording then return end
-
-            activity.direction(result.data.direction)
+            if commit and not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
-                updateLightSource(lightSourceName, result.data.direction)
+                updateLightSource(lightSourceName, updateResult.data.direction)
             end)
                 
             if success then
@@ -85,6 +92,13 @@ return function(
                     ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Cancel)
                 end
             end
+
+            return result.ok({
+                currentState = current,
+                direction = updateResult.data.direction,
+            })
+        else
+            return result.error(updateResult.error)
         end
     end
 end

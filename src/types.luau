@@ -36,16 +36,6 @@ export type Tool<T = {}> = {
     gizmo: ((initial: ToolState, current: () -> ToolState, direction: () -> Vector3) -> unknown)?,
 }
 
-export type ToolActivity = {
-    tool: string,
-    lightSource: string,
-    initial: ToolState,
-    object: LightSourceObject?,
-    -- sources
-    current: (() -> ToolState) & ((ToolState) -> ToolState),
-    direction: (() -> Vector3) & ((Vector3) -> Vector3),
-}
-
 export type LightSourceObject = {
     container: Attachment | BasePart,
     light: Light,
