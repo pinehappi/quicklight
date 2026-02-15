@@ -5,7 +5,9 @@ local vide = require(script.Parent.Parent.Packages.vide)
 local runTool = require(script.Parent.Parent.core.runTool)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
+local fadeFrame = require(script.Parent.base.fadeFrame)
 local toolbar = require(script.Parent.toolbar)
+local tween = require(script.Parent.tween)
 
 -- connects events and wires up tools
 local function useTool(
@@ -97,6 +99,10 @@ local function useTool(
             end))
         end
     end)
+
+    return function()
+        return not not currentAction()
+    end
 end
 
 local NUMBER_KEYCODES = {
@@ -202,15 +208,15 @@ return function(props: Props)
     local tools = vide.derive(function()
         return
             if lightSource() == "object" then {
+                "face",
+                "line",
+                "bounce",
+            } else {
                 "direct",
                 "line",
                 "face",
                 "bounce",
                 "shadow",
-            } else {
-                "face",
-                "line",
-                "bounce",
             }
     end)
 
@@ -231,6 +237,20 @@ return function(props: Props)
             toolBacking(newTool)
         end
     end
+
+    local isToolInUse = useTool(props.on, lightSource, tool, lightSourceObject)
+
+    useLightSourceSelection(props.on, lightSource, lightSourceObject)
+
+    useHotkeys({
+        on = props.on,
+        lightSources = lightSources,
+        lightSource = lightSource,
+        lightSourceSelected = lightSource,
+        tools = tools,
+        tool = tool,
+        toolSelected = toolSelected,
+    })
 
     vide.effect(function()
         props.pluginButton:SetActive(props.on())
@@ -257,29 +277,20 @@ return function(props: Props)
         end
     end))
 
-    useTool(props.on, lightSource, tool, lightSourceObject)
-
-    useLightSourceSelection(props.on, lightSource, lightSourceObject)
-
-    useHotkeys({
-        on = props.on,
-        lightSources = lightSources,
-        lightSource = lightSource,
-        lightSourceSelected = lightSource,
-        tools = tools,
-        tool = tool,
-        toolSelected = toolSelected,
-    })
-   
     return {
-        toolbar {
-            tools = tools,
-            tool = tool,
-            toolSelected = toolSelected,
+        fadeFrame {
+            transparency = tween(function() return isToolInUse() and 0.5 or 0 end, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0.15),
+            position = vide.spring(function() return isToolInUse() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.3, 0.7),
+            size = UDim2.new(1, 0, 0, 300),
+            child = toolbar {
+                tools = tools,
+                tool = tool,
+                toolSelected = toolSelected,
 
-            lightSources = lightSources,
-            lightSource = lightSource,
-            lightSourceSelected = lightSource,
+                lightSources = lightSources,
+                lightSource = lightSource,
+                lightSourceSelected = lightSource,
+            },
         },
     }
 end

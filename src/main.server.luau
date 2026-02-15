@@ -8,6 +8,7 @@ local pluginButton = pluginToolbar:CreateButton(NAME, `activate {NAME}`, "")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = NAME
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = game:GetService("CoreGui")
 
 local on = vide.source(false)
