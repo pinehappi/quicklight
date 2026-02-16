@@ -141,7 +141,7 @@ return function(props: Props)
                 toolButton.Parent = layerContext()
                 size(toolButton.AbsoluteSize)
 
-                local targetSizeX = function()
+                local currentSizeX = tween(function()
                     if present() or firstRender[name] then
                         if present() then
                             firstRender[name] = false
@@ -150,23 +150,28 @@ return function(props: Props)
                     else
                         return 0
                     end
-                end
-                local currentSizeX = tween(targetSizeX, theme.tween.slow)
-
-                local targetPadding = function()
+                end, theme.tween.slow)
+                
+                local currentPadding = tween(function()
                     if (present() or firstRender[name]) and index < #toolOrdering then
                         return theme.spacing.md()
                     else
                         return 0
                     end
-                end
-                local currentPadding = tween(targetPadding, theme.tween.slow)
+                end, theme.tween.slow)
 
                 vide.apply(toolButton) {
                     AutomaticSize = Enum.AutomaticSize.None,
                     ClipsDescendants = true,
                     Size = function()
                         return UDim2.fromOffset(currentSizeX(), size().Y)
+                    end,
+                }
+                
+                -- hide the stroke so when its collapsed its completely gone
+                vide.apply(toolButton:FindFirstChildOfClass("UIStroke")) {
+                    Transparency = function()
+                        return currentSizeX() == 0 and 1 or 0
                     end,
                 }
 
@@ -177,7 +182,7 @@ return function(props: Props)
                     BackgroundTransparency = 1,
                     LayoutOrder = index,
                     toolButton,
-                }, 0.5
+                }, 5
             end)
         },
     }

@@ -241,8 +241,14 @@ return function(props: Props)
     -- one source for the "backing" value, one for the exposed value that handles the tool no longer being available
     local toolBacking = vide.source("direct" :: string?)
     local tool = vide.derive(function(): string?
-        if toolBacking() and not table.find(tools(), toolBacking()) then
-            return tools()[1]
+        local tools = tools()
+        if toolBacking() and not table.find(tools, toolBacking()) then
+            for _, tool in toolOrdering do
+                if table.find(tools, tool) then
+                    return tool
+                end
+            end
+            return nil
         else
             return toolBacking()
         end
