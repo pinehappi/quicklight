@@ -8,6 +8,7 @@ local tween = require(script.Parent.tween)
 
 local toolIcons = {
     direct = "rbxassetid://115640630847427",
+    pen = "rbxassetid://12737534507",
     line = "rbxassetid://5210472205",
     bounce = "rbxassetid://2714338256",
     face = "rbxassetid://11955884948",

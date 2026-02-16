@@ -2,7 +2,11 @@ local result = require(script.Parent.Parent.result)
 local types = require(script.Parent.Parent.types)
 
 return {
-	update = function(_, current)
-		return result.ok({ direction = current.mouseDirection } :: any)
+	run = function()
+		return function(current)
+			return result.ok({
+				lightInfo = { direction = current.mouseDirection }
+			})
+		end
 	end,
 } :: types.Tool

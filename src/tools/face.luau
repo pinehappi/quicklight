@@ -5,22 +5,26 @@ local theme = require(script.Parent.Parent.app.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
 return {
-	update = function(_, current)
-		local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
+	run = function()
+		return function(current)
+			local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
 
-		if not current.mouseNormal then
-			return result.error("Cursor must be on a face!")
+			if not current.mouseNormal then
+				return result.error("Cursor must be on a face!")
+			end
+
+			local reflection = reflect(rayDirection.LookVector, current.mouseNormal)
+			local dir = CFrame.lookAt(
+				current.cameraPosition,
+				current.cameraPosition + reflection
+			).LookVector
+
+			return result.ok({
+				lightInfo = { direction = dir }
+			})
 		end
-
-		local reflection = reflect(rayDirection.LookVector, current.mouseNormal)
-		local dir = CFrame.lookAt(
-			current.cameraPosition,
-			current.cameraPosition + reflection
-		).LookVector
-
-		return result.ok({ direction = dir } :: any)
 	end,
-	gizmo = function(initial, current, direction)
+	gizmo = function(initial, current)
 		return arrowGizmo {
 			color = theme.accent.faint,
 			from = function()

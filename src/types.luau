@@ -27,13 +27,18 @@ export type ToolState = {
     mouseNormal: Vector3?,
 }
 
-export type ToolUpdate<T> = T & {
+export type LightInfo = {
     direction: Vector3,
+    -- for object/pen
+    position: Vector3?,
+    angle: number?,
 }
 
-export type Tool<T = {}> = {
-	update: (initial: ToolState, current: ToolState, LightSourceObject?) -> result.Result<ToolUpdate<T>, string>,
-    gizmo: ((initial: ToolState, current: () -> ToolState, direction: () -> Vector3) -> unknown)?,
+export type Tool<GizmoExtra = nil> = {
+    run: (initial: ToolState, object: LightSourceObject?)
+        -> (current: ToolState)
+        -> result.Result<{lightInfo: LightInfo, gizmoExtra: GizmoExtra}, string>,
+    gizmo: ((initial: ToolState, current: () -> ToolState, lightInfo: () -> LightInfo, gizmoExtra: () -> GizmoExtra?) -> unknown)?,
 }
 
 export type LightSourceObject = {

@@ -24,7 +24,8 @@ local function useTool(
         update: runTool.UpdateToolCallback,
         -- sources
         currentState: (() -> types.ToolState) & ((types.ToolState) -> ()),
-        direction: (() -> Vector3) & ((Vector3) -> ()),
+        lightInfo: (() -> types.LightInfo) & ((types.LightInfo) -> ()),
+        gizmoExtra: (() -> unknown) & ((unknown) -> ()),
     }?)
 
     local function tryUpdate(commit: boolean)
@@ -33,7 +34,8 @@ local function useTool(
             local result = action.update(commit)
             if result.kind == "success" then
                 action.currentState(result.data.currentState)
-                action.direction(result.data.direction)
+                action.lightInfo(result.data.lightInfo)
+                action.gizmoExtra(result.data.gizmoExtra)
             end
         end
     end
@@ -63,7 +65,10 @@ local function useTool(
                 tool = tool,
                 initialState = initialState,
                 currentState = vide.source(initialState),
-                direction = vide.source(Vector3.zero),
+                lightInfo = vide.source({
+                    direction = Vector3.zero,
+                } :: types.LightInfo),
+                gizmoExtra = vide.source(nil),
                 update = update,
             })
             tryUpdate(false)
@@ -77,7 +82,7 @@ local function useTool(
         local tool = tools[action.tool]
         if tool.gizmo then
             local gizmo = vide.untrack(function()
-                return tool.gizmo(action.initialState, action.currentState, action.direction) :: GuiObject
+                return tool.gizmo(action.initialState, action.currentState, action.lightInfo, action.gizmoExtra) :: GuiObject
             end)
             gizmo.Parent = CoreGui
 
@@ -226,6 +231,7 @@ return function(props: Props)
     local tools = vide.derive(function()
         return
             if lightSource() == "object" then {
+                "pen",
                 "face",
                 "line",
                 "bounce",

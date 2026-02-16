@@ -4,13 +4,17 @@ local arrowGizmo = require(script.Parent.Parent.app.gizmos.arrowGizmo)
 local theme = require(script.Parent.Parent.app.theme)
 
 return {
-	update = function(initial, current)
-		local dir = CFrame.lookAt(
-			current.mousePosition,
-			initial.mousePosition
-		).LookVector
+	run = function(initial)
+		return function(current)
+			local dir = CFrame.lookAt(
+				current.mousePosition,
+				initial.mousePosition
+			).LookVector
 
-		return result.ok({ direction = dir } :: any)
+			return result.ok({
+				lightInfo = { direction = dir },
+			})
+		end
 	end,
 	gizmo = function(initial, current)
 		return arrowGizmo {

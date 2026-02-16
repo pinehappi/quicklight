@@ -6,19 +6,23 @@ local theme = require(script.Parent.Parent.app.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
 return {
-	update = function(_, current)
-		local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
-		local dir = CFrame.lookAt(
-			current.mousePosition,
-			current.mousePosition + reflection
-		).LookVector
+	run = function()
+		return function(current)
+			local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
+			local dir = CFrame.lookAt(
+				current.mousePosition,
+				current.mousePosition + reflection
+			).LookVector
 
-		return result.ok({ direction = dir } :: any)
+			return result.ok({
+				lightInfo = { direction = dir }
+			 })
+		end
 	end,
-	gizmo = function(initial, current, direction)
+	gizmo = function(initial, current, lightInfo)
 		local horizontalDirection = function()
-			local result = direction():Cross(Vector3.new(0, 1, 0))
-			if math.abs(direction().Unit.Y) > 0.995 then
+			local result = lightInfo().direction:Cross(Vector3.new(0, 1, 0))
+			if math.abs(lightInfo().direction.Unit.Y) > 0.995 then
 				result = Vector3.new(1, 0, 0)
 			end
 			return result

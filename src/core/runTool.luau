@@ -5,7 +5,7 @@ local result = require(script.Parent.Parent.result)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 
-local function getToolState(): types.ToolState
+local function getToolState(ignore: {any}?): types.ToolState
     local camera = workspace.CurrentCamera
     if not workspace.CurrentCamera then
         -- how?!?!
@@ -22,7 +22,12 @@ local function getToolState(): types.ToolState
     
     local mouseLocation = UserInputService:GetMouseLocation()
     local ray = camera:ViewportPointToRay(mouseLocation.X, mouseLocation.Y, 1)
-    local result = workspace:Raycast(camera.CFrame.Position, ray.Direction * 10000)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    if ignore then
+        params.FilterDescendantsInstances = ignore
+    end
+    local result = workspace:Raycast(camera.CFrame.Position, ray.Direction * 10000, params)
 	return {
 		sunDirection = Lighting:GetSunDirection(),
 		moonDirection = Lighting:GetMoonDirection(),
@@ -45,14 +50,23 @@ local function updateSkyFromDirection(direction: Vector3, longitudeFactor: numbe
 	Lighting.GeographicLatitude = geographicLatitude 
 end
 
-local function updateLightSource(name: string, direction: Vector3, state: types.ToolState, object: types.LightSourceObject?)
+local function updateLightSource(name: string, lightInfo: types.LightInfo, state: types.ToolState, object: types.LightSourceObject?)
     if name == "object" then
         if object then
             local distance = 5
+            local position = lightInfo.position or state.mousePosition
             local cframe = CFrame.lookAt(
-                state.mousePosition + distance*direction,
-                state.mousePosition
+                position + distance*lightInfo.direction,
+                position
             )
+
+            if lightInfo.angle then
+                if (object.light:IsA("SpotLight") or object.light:IsA("SurfaceLight")) then
+                    (object.light :: any).Angle = lightInfo.angle
+                elseif object.light:IsA("PointLight") then
+                    object.light.Range = math.tan(math.rad(lightInfo.angle/2)) * distance
+                end
+            end
             
             if object.container:IsA("BasePart") then
                 object.container.CFrame = cframe
@@ -61,15 +75,16 @@ local function updateLightSource(name: string, direction: Vector3, state: types.
             end
         end
     elseif name == "sun" then
-        updateSkyFromDirection(direction, -1)
+        updateSkyFromDirection(lightInfo.direction, -1)
     elseif name == "moon" then
-        updateSkyFromDirection(direction, 1)
+        updateSkyFromDirection(lightInfo.direction, 1)
     end
 end
 
 export type UpdateToolResult = {
     currentState: types.ToolState,
-    direction: Vector3,
+    lightInfo: types.LightInfo,
+    gizmoExtra: unknown,
 }
 
 export type UpdateToolCallback = (commit: boolean) -> result.Result<UpdateToolResult, string>
@@ -81,19 +96,20 @@ return function(
     lightSourceObject: types.LightSourceObject?
 ): (types.ToolState, UpdateToolCallback)
     local tool = tools[toolName]
-    local initial = getToolState()
     local object = lightSourceName == "object" and lightSourceObject or nil
+    local initial = getToolState(object and {object.container})
+    local update = tool.run(initial, object)
     
     return initial, function(commit: boolean)
-        local current = getToolState()
-        local updateResult = tool.update(initial, current, object)
+        local current = getToolState(object and {object.container})
+        local updateResult = update(current)
 
         if updateResult.kind == "success" then
             local recording = commit and ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
             if commit and not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
-                updateLightSource(lightSourceName, updateResult.data.direction, current, object)
+                updateLightSource(lightSourceName, updateResult.data.lightInfo, current, object)
             end)
                 
             if success then
@@ -109,7 +125,8 @@ return function(
 
             return result.ok({
                 currentState = current,
-                direction = updateResult.data.direction,
+                lightInfo = updateResult.data.lightInfo,
+                gizmoExtra = updateResult.data.gizmoExtra,
             })
         else
             return result.error(updateResult.error)
