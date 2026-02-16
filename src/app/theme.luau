@@ -122,6 +122,14 @@ local destroy, theme = vide.root(function()
                 end,
             }
         },
+        tween = {
+            base = function()
+                return themeSource().tween.base
+            end,
+            slow = function()
+                return themeSource().tween.slow
+            end,
+        }
     }
 end)
 

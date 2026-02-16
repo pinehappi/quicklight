@@ -7,6 +7,7 @@ local toolOrdering = require(script.Parent.Parent.toolOrdering)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 local fadeFrame = require(script.Parent.base.fadeFrame)
+local theme = require(script.Parent.theme)
 local toolbar = require(script.Parent.toolbar)
 local tween = require(script.Parent.tween)
 
@@ -296,7 +297,7 @@ return function(props: Props)
 
     return {
         fadeFrame {
-            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, 0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
             position = vide.spring(function() return isUsingTool() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.18, 1),
             size = UDim2.new(1, 0, 0, 300),
             child = toolbar {

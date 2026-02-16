@@ -112,7 +112,6 @@ return function(props: Props)
             },
 
             vide.values(props.tools, function(name, _, present)
-                local TRANSITION_TIME = 0.1
                 local index = table.find(toolOrdering, name)
                 local toolButton = button {
                     text = name,
@@ -143,7 +142,7 @@ return function(props: Props)
                         return 0
                     end
                 end
-                local currentSizeX = tween(targetSizeX, TRANSITION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local currentSizeX = tween(targetSizeX, theme.tween.slow)
 
                 local targetPadding = function()
                     if present() and index < #toolOrdering then
@@ -152,7 +151,7 @@ return function(props: Props)
                         return 0
                     end
                 end
-                local currentPadding = tween(targetPadding, TRANSITION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local currentPadding = tween(targetPadding, theme.tween.slow)
 
                 vide.apply(toolButton) {
                     AutomaticSize = Enum.AutomaticSize.None,
@@ -169,7 +168,7 @@ return function(props: Props)
                     BackgroundTransparency = 1,
                     LayoutOrder = index,
                     toolButton,
-                }, TRANSITION_TIME
+                }, 0.5
             end)
         },
     }
