@@ -72,8 +72,8 @@ local function getTheme(): Theme
             stroke = theme:GetColor(Enum.StudioStyleGuideColor.Border),
         },
         tween = {
-            base = TweenInfo.new(0.07, Enum.EasingStyle.Quad),
-            slow = TweenInfo.new(0.18, Enum.EasingStyle.Sine),
+            base = TweenInfo.new(0.06, Enum.EasingStyle.Quad),
+            slow = TweenInfo.new(0.17, Enum.EasingStyle.Sine),
         }
     }
 end

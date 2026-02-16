@@ -1,5 +1,6 @@
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
 local theme = require(script.Parent.Parent.theme)
+local tween = require(script.Parent.Parent.tween)
 
 export type Props = {
     text: string | (() -> string | nil) | nil,
@@ -18,7 +19,7 @@ return function(props: Props)
     local isHovering = vide.source(false)
     local isPressing = vide.source(false)
     
-    local backgroundColor = function()
+    local backgroundColorTarget = function()
         if isSelecting() then
             return theme.button.background.select()
         elseif isPressing() then
@@ -29,8 +30,9 @@ return function(props: Props)
             return theme.button.background.default()
         end
     end
+    local backgroundColor = tween(backgroundColorTarget, theme.tween.base)
 
-    local foregroundColor = function()
+    local foregroundColorTarget = function()
         if isSelecting() then
             return theme.button.foreground.select()
         elseif isPressing() then
@@ -41,8 +43,9 @@ return function(props: Props)
             return theme.button.foreground.default()
         end
     end
+    local foregroundColor = tween(foregroundColorTarget, theme.tween.base)
     
-    local strokeColor = function()
+    local strokeColorTarget = function()
         if isSelecting() then
             return theme.button.stroke.select()
         elseif isPressing() then
@@ -53,6 +56,7 @@ return function(props: Props)
             return theme.button.stroke.default()
         end
     end
+    local strokeColor = tween(strokeColorTarget, theme.tween.base)
     
     return vide.create "TextButton" {
         AutomaticSize = Enum.AutomaticSize.XY,
