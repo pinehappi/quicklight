@@ -45,10 +45,24 @@ local function updateSkyFromDirection(direction: Vector3, longitudeFactor: numbe
 	Lighting.GeographicLatitude = geographicLatitude 
 end
 
-local function updateLightSource(name: string, direction: Vector3)
-    if name == "sun" then
+local function updateLightSource(name: string, direction: Vector3, state: types.ToolState, object: types.LightSourceObject?)
+    if name == "object" then
+        if object then
+            local distance = 5
+            local cframe = CFrame.lookAt(
+                state.mousePosition + distance*direction,
+                state.mousePosition
+            )
+            
+            if object.container:IsA("BasePart") then
+                object.container.CFrame = cframe
+            elseif object.container:IsA("Attachment") then
+                object.container.WorldCFrame = cframe
+            end
+        end
+    elseif name == "sun" then
         updateSkyFromDirection(direction, -1)
-    else
+    elseif name == "moon" then
         updateSkyFromDirection(direction, 1)
     end
 end
@@ -79,7 +93,7 @@ return function(
             if commit and not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
-                updateLightSource(lightSourceName, updateResult.data.direction)
+                updateLightSource(lightSourceName, updateResult.data.direction, current, object)
             end)
                 
             if success then

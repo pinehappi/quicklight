@@ -189,7 +189,7 @@ local function useLightSourceSelection(
                 end
 
                 if container and light then
-                    local currentObject = lightSourceObject()
+                    local currentObject = vide.untrack(lightSourceObject)
                     if currentObject and currentObject.light == light and (currentObject.container :: any) == container then
                         return
                     end
@@ -201,7 +201,7 @@ local function useLightSourceSelection(
                 end
             end
 
-            vide.cleanup(Selection.Changed:Connect(updateObject))
+            vide.cleanup(Selection.SelectionChanged:Connect(updateObject))
             updateObject()
         end
     end)
