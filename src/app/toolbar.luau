@@ -1,17 +1,21 @@
 local vide = require(script.Parent.Parent.Packages.vide)
 local button = require(script.Parent.base.button)
 local icon = require(script.Parent.base.icon)
+local layerContext = require(script.Parent.layerContext)
 local theme = require(script.Parent.theme)
+local toolOrdering = require(script.Parent.Parent.toolOrdering)
+local tween = require(script.Parent.tween)
 
 local toolIcons = {
-    direct = "rbxassetid://4827658474",
-    line = "rbxassetid://17380139258",
+    direct = "rbxassetid://115640630847427",
+    line = "rbxassetid://5210472205",
     bounce = "rbxassetid://2714338256",
     face = "rbxassetid://11955884948",
     shadow = "rbxassetid://12188334397",
 }
 
 local lightSourceIcons = {
+    object = "rbxassetid://122586788171758",
     sun = "rbxassetid://17650932353",
     moon = "rbxassetid://17650930453",
 }
@@ -103,13 +107,14 @@ return function(props: Props)
             Size = UDim2.fromOffset(0, 0),
             
             vide.create "UIListLayout" {
-                Padding = theme.padding.md,
                 FillDirection = Enum.FillDirection.Horizontal,
                 VerticalAlignment = Enum.VerticalAlignment.Center,
             },
 
-            vide.values(props.tools, function(name, index)
-                return button {
+            vide.values(props.tools, function(name, _, present)
+                local TRANSITION_TIME = 0.1
+                local index = table.find(toolOrdering, name)
+                local toolButton = button {
                     text = name,
                     icon = function(props)
                         return icon {
@@ -124,10 +129,47 @@ return function(props: Props)
                     activated = function()
                         props.toolSelected(name)
                     end,
-                    native = {
-                        LayoutOrder = index,
-                    }
                 }
+
+                local size = vide.source(Vector2.zero)
+                -- parent immediately so we can get the size
+                toolButton.Parent = layerContext()
+                size(toolButton.AbsoluteSize)
+
+                local targetSizeX = function()
+                    if present() then
+                        return size().X
+                    else
+                        return 0
+                    end
+                end
+                local currentSizeX = tween(targetSizeX, TRANSITION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+                local targetPadding = function()
+                    if present() and index < #toolOrdering then
+                        return theme.spacing.md()
+                    else
+                        return 0
+                    end
+                end
+                local currentPadding = tween(targetPadding, TRANSITION_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+                vide.apply(toolButton) {
+                    AutomaticSize = Enum.AutomaticSize.None,
+                    ClipsDescendants = true,
+                    Size = function()
+                        return UDim2.fromOffset(currentSizeX(), size().Y)
+                    end,
+                }
+
+                return vide.create "Frame" {
+                    Size = function()
+                        return UDim2.fromOffset(currentSizeX() + currentPadding(), size().Y)
+                    end,
+                    BackgroundTransparency = 1,
+                    LayoutOrder = index,
+                    toolButton,
+                }, TRANSITION_TIME
             end)
         },
     }

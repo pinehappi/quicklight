@@ -3,6 +3,7 @@ local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local runTool = require(script.Parent.Parent.core.runTool)
+local toolOrdering = require(script.Parent.Parent.toolOrdering)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 local fadeFrame = require(script.Parent.base.fadeFrame)
@@ -127,12 +128,28 @@ local function useHotkeys(options: {
         if options.on() then
             vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
                 local number = NUMBER_KEYCODES[input.KeyCode]
-                if number and options.tools()[number] and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
-                    options.toolSelected(options.tools()[number])
+                local tools = options.tools()
+                if number and number <= #tools and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
+                    local found = 0
+                    for _, tool in toolOrdering do
+                        if table.find(tools, tool) then
+                            found += 1
+                        end
+
+                        if found == number then
+                            options.toolSelected(tool)
+                            break
+                        end
+                    end
                 elseif input.KeyCode == Enum.KeyCode.Tab then
-                    local lightSourceIndex = table.find(options.lightSources(), options.lightSource())
-                    if lightSourceIndex then
-                        options.lightSourceSelected(options.lightSources()[lightSourceIndex % #options.lightSources() + 1])
+                    local lightSources = options.lightSources()
+                    local lightSourceIndex = table.find(lightSources, options.lightSource())
+                    if not lightSourceIndex then return end
+
+                    if input:IsModifierKeyDown(Enum.ModifierKey.Shift) then
+                        options.lightSourceSelected(lightSources[(lightSourceIndex - 2) % #lightSources + 1])
+                    else
+                        options.lightSourceSelected(lightSources[lightSourceIndex % #lightSources + 1])
                     end
                 end
             end))
@@ -279,8 +296,8 @@ return function(props: Props)
 
     return {
         fadeFrame {
-            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0.15),
-            position = vide.spring(function() return isUsingTool() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.3, 0.7),
+            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, 0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+            position = vide.spring(function() return isUsingTool() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.18, 1),
             size = UDim2.new(1, 0, 0, 300),
             child = toolbar {
                 tools = tools,

@@ -1,6 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local vide = require(script.Parent.Parent.Packages.vide)
-return function(source: () -> number, style: Enum.EasingStyle, direction: Enum.EasingDirection, duration: number): () -> number
+return function(source: () -> number, duration: number, style: Enum.EasingStyle, direction: Enum.EasingDirection): () -> number
     local value = vide.source(source())
     
     vide.effect(function()
