@@ -10,14 +10,11 @@ local pluginButton = pluginToolbar:CreateButton(NAME, `activate {NAME}`, "")
 local gui = Instance.new("ScreenGui")
 gui.Name = NAME
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Enabled = true
 gui.Parent = game:GetService("CoreGui")
 
 local on = vide.source(false)
 local unmount = vide.mount(function()
-    vide.effect(function()
-        gui.Enabled = on()
-    end)
-    
     return layerContext(gui, function()
         return app {
             on = on,

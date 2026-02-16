@@ -258,6 +258,17 @@ return function(props: Props)
 
     local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject)
 
+    local toolbarPosition = vide.spring(function()
+        local y = 0
+        if not props.on() then
+            y -= 60
+        end
+        if isUsingTool() then
+            y -= 28
+        end
+        return UDim2.fromOffset(0, y)
+    end, 0.18, 1)
+
     useLightSourceSelection(props.on, lightSource, lightSourceObject)
 
     useHotkeys({
@@ -269,10 +280,6 @@ return function(props: Props)
         tool = tool,
         toolSelected = handleToolSelected,
     })
-
-    vide.effect(function()
-        props.pluginButton:SetActive(props.on())
-    end)
 
     vide.effect(function()
         if props.on() and tool() then
@@ -296,19 +303,21 @@ return function(props: Props)
     end))
 
     return {
-        fadeFrame {
-            transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
-            position = vide.spring(function() return isUsingTool() and UDim2.fromOffset(0, -28) or UDim2.fromOffset(0, 0) end, 0.18, 1),
-            size = UDim2.new(1, 0, 0, 300),
-            child = toolbar {
-                tools = tools,
-                tool = tool,
-                toolSelected = handleToolSelected,
+        vide.show(props.on, function()
+            return fadeFrame {
+                transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
+                position = toolbarPosition,
+                size = UDim2.new(1, 0, 0, 300),
+                child = toolbar {
+                    tools = tools,
+                    tool = tool,
+                    toolSelected = handleToolSelected,
 
-                lightSources = lightSources,
-                lightSource = lightSource,
-                lightSourceSelected = lightSource,
-            },
-        },
+                    lightSources = lightSources,
+                    lightSource = lightSource,
+                    lightSourceSelected = lightSource,
+                },
+            }, 0.5
+        end)
     }
 end

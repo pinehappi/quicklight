@@ -31,6 +31,12 @@ export type Props = {
 }
 
 return function(props: Props)
+    -- we want buttons be full size on the first render
+    local firstRender: {[string]: boolean} = {}
+    for _, tool in toolOrdering do
+        firstRender[tool] = true
+    end
+
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.XY,
         BackgroundColor3 = theme.surface0.background,
@@ -136,7 +142,10 @@ return function(props: Props)
                 size(toolButton.AbsoluteSize)
 
                 local targetSizeX = function()
-                    if present() then
+                    if present() or firstRender[name] then
+                        if present() then
+                            firstRender[name] = false
+                        end
                         return size().X
                     else
                         return 0
@@ -145,7 +154,7 @@ return function(props: Props)
                 local currentSizeX = tween(targetSizeX, theme.tween.slow)
 
                 local targetPadding = function()
-                    if present() and index < #toolOrdering then
+                    if (present() or firstRender[name]) and index < #toolOrdering then
                         return theme.spacing.md()
                     else
                         return 0
