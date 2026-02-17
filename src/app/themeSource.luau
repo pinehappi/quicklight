@@ -31,6 +31,11 @@ export type Theme = {
         foreground: Color3,
         stroke: Color3,
     },
+    input: {
+        background: Color3,
+        stroke: Color3,
+        strokeActive: Color3,
+    },
     tween: {
         base: TweenInfo,
         slow: TweenInfo,
@@ -70,6 +75,11 @@ local function getTheme(): Theme
             background = theme:GetColor(Enum.StudioStyleGuideColor.Button),
             foreground = theme:GetColor(Enum.StudioStyleGuideColor.ButtonText),
             stroke = theme:GetColor(Enum.StudioStyleGuideColor.Border),
+        },
+        input = {
+            background = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground),
+            stroke = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder),
+            strokeActive = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder, Enum.StudioStyleGuideModifier.Selected),
         },
         tween = {
             base = TweenInfo.new(0.06, Enum.EasingStyle.Quad),

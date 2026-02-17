@@ -11,6 +11,9 @@ local destroy, theme = vide.root(function()
             base = function()
                 return UDim.new(0, themeSource().radius.base)
             end,
+            full = function()
+                return UDim.new(1, 0)
+            end,
         },
         spacing = {
             xs = function()
@@ -121,6 +124,37 @@ local destroy, theme = vide.root(function()
                     return themeSource().accent.main
                 end,
             }
+        },
+        input = {
+            background = {
+                default = function()
+                    return themeSource().input.background
+                end,
+                hover = function()
+                    return themeSource().input.background
+                end,
+                press = function()
+                    return themeSource().input.background
+                end,
+                select = function()
+                    return themeSource().input.background
+                end,
+            },
+            stroke = {
+                default = function()
+                    return themeSource().input.stroke
+                end,
+                hover = function()
+                    return Oklab.mix(themeSource().input.stroke, themeSource().surface0.foreground, 0.1)
+                end,
+                press = function()
+                    return Oklab.mix(themeSource().input.stroke, themeSource().surface0.background, 0.1)
+                end,
+                select = function()
+                    return themeSource().input.strokeActive
+                end,
+            }
+
         },
         tween = {
             base = function()

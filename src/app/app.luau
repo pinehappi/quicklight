@@ -220,7 +220,7 @@ export type Props = {
 }
 
 return function(props: Props)
-    local lightSource = vide.source("sun")
+    local lightSource = vide.source("object")
     local lightSources = vide.source({
         "object",
         "sun",
@@ -245,7 +245,7 @@ return function(props: Props)
     end)
 
     -- one source for the "backing" value, one for the exposed value that handles the tool no longer being available
-    local toolBacking = vide.source("direct" :: string?)
+    local toolBacking = vide.source("pen" :: string?)
     local tool = vide.derive(function(): string?
         local tools = tools()
         if toolBacking() and not table.find(tools, toolBacking()) then
