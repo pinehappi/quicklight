@@ -28,10 +28,10 @@ local function useTool(
         gizmoExtra: (() -> unknown) & ((unknown) -> ()),
     }?)
 
-    local function tryUpdate(commit: boolean)
+    local function tryUpdate()
         local action = currentAction()
         if action then
-            local result = action.update(commit)
+            local result = action.update()
             if result.kind == "success" then
                 action.currentState(result.data.currentState)
                 action.lightInfo(result.data.lightInfo)
@@ -46,6 +46,8 @@ local function useTool(
 
         local tool = tool()
         if not tool then return end
+
+        if currentAction() then return end
         
         if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentAction()) then
             local initialState, update = runTool(tool, lightSource(), lightSourceObject())
@@ -55,7 +57,7 @@ local function useTool(
                     connection:Disconnect()
                     local newAction = currentAction()
                     if newAction and newAction.initialState == initialState then
-                        tryUpdate(true)
+                        tryUpdate()
                         currentAction(nil)
                     end
                 end
@@ -71,7 +73,7 @@ local function useTool(
                 gizmoExtra = vide.source(nil),
                 update = update,
             })
-            tryUpdate(false)
+            tryUpdate()
         end
     end))
 
@@ -93,7 +95,7 @@ local function useTool(
             if not on() then return end
 
             if input.UserInputType == Enum.UserInputType.MouseMovement then
-                tryUpdate(false)
+                tryUpdate()
             end
         end))
 
@@ -102,7 +104,7 @@ local function useTool(
             vide.cleanup(camera:GetPropertyChangedSignal("CFrame"):Connect(function(input)
                 if not on() then return end
 
-                tryUpdate(false)
+                tryUpdate()
             end))
         end
     end)

@@ -87,7 +87,7 @@ export type UpdateToolResult = {
     gizmoExtra: unknown,
 }
 
-export type UpdateToolCallback = (commit: boolean) -> result.Result<UpdateToolResult, string>
+export type UpdateToolCallback = () -> result.Result<UpdateToolResult, string>
 
 -- returns a ToolActivity and a function to update it
 return function(
@@ -96,31 +96,67 @@ return function(
     lightSourceObject: types.LightSourceObject?
 ): (types.ToolState, UpdateToolCallback)
     local tool = tools[toolName]
-    local object = lightSourceName == "object" and lightSourceObject or nil
+    local shouldAppend = false
+    local object: types.LightSourceObject
+    if lightSourceName == "object" then
+        if lightSourceObject then
+            object = lightSourceObject
+        else
+            local recording = ChangeHistoryService:TryBeginRecording("create light")
+            -- TODO: handle this error better instead of silently
+            if recording then
+                local container = Instance.new("Part")
+                container.Size = Vector3.new(1, 1, 1)
+                container.Transparency = 0.5
+                container.Color = Color3.new(1, 1, 1)
+                container.TopSurface = Enum.SurfaceType.Smooth
+                container.BottomSurface = Enum.SurfaceType.Smooth
+                container.Anchored = true
+                container.CanCollide = false
+                container.Name = "LightPart"
+                container.Parent = workspace
+
+                local light = Instance.new("SpotLight")
+                light.Color = Color3.new(1, 1, 1)
+                light.Brightness = 1.5
+                light.Parent = container
+                
+                object = {
+                    light = light,
+                    container = container,
+                }
+
+                ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
+                shouldAppend = true
+            end
+        end
+    end
+    
     local initial = getToolState(object and {object.container})
     local update = tool.run(initial, object)
     
-    return initial, function(commit: boolean)
+    return initial, function()
         local current = getToolState(object and {object.container})
         local updateResult = update(current)
 
         if updateResult.kind == "success" then
-            local recording = commit and ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
-            if commit and not recording then return result.error("failed to record") end
+            local recording = ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
+            if not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
                 updateLightSource(lightSourceName, updateResult.data.lightInfo, current, object)
             end)
                 
             if success then
-                if recording then
+                if shouldAppend then
+                    ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Append)
+                else
+                    shouldAppend = true
                     ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
                 end
             else
                 warn("Light placement failed: " .. err)
-                if recording then
-                    ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Cancel)
-                end
+                ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Cancel)
             end
 
             return result.ok({
