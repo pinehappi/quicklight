@@ -34,7 +34,7 @@ export type Props = {
 return function(props: Props)
     -- we want buttons be full size on the first render
     local firstRender: {[string]: boolean} = {}
-    for _, tool in toolOrdering do
+    for _, tool in props.tools() do
         firstRender[tool] = true
     end
 

@@ -55,6 +55,7 @@ local function updateLightSource(name: string, lightInfo: types.LightInfo, state
         if object then
             local distance = 5
             local position = lightInfo.position or state.mousePosition
+            -- TODO: handle when it is not the front face
             local cframe = CFrame.lookAt(
                 position + distance*lightInfo.direction,
                 position
@@ -118,7 +119,7 @@ return function(
 
                 local light = Instance.new("SpotLight")
                 light.Color = Color3.new(1, 1, 1)
-                light.Brightness = 1.5
+                light.Brightness = 1
                 light.Parent = container
                 
                 object = {

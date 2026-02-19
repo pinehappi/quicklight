@@ -3,92 +3,67 @@ local theme = require(script.Parent.Parent.theme)
 local tween = require(script.Parent.Parent.tween)
 
 export type Props = {
-    text: string | (() -> string | nil) | nil,
-    icon: (({ color: () -> Color3 }) -> any) | nil,
-    isSelecting: boolean | (() -> boolean) | nil,
+    text: () -> (string),
+    textChanged: (string) -> (),
     padding: {
         left: UDim | () -> UDim,
         right: UDim | () -> UDim,
         top: UDim | () -> UDim,
         bottom: UDim | () -> UDim,
     }?,
-    
-    activated: (() -> ()) | nil,
 
     native: unknown,
 }
 
 return function(props: Props)
-    local isSelecting: () -> boolean = 
-        if type(props.isSelecting) == "function" then props.isSelecting
-        else function() return not not props.isSelecting end
+    local isSelecting = vide.source(false)
     local isHovering = vide.source(false)
     local isPressing = vide.source(false)
     
     local backgroundColor = tween(function()
         if isSelecting() then
-            return theme.button.background.select()
+            return theme.input.background.select()
         elseif isPressing() then
-            return theme.button.background.press()
+            return theme.input.background.press()
         elseif isHovering() then
-            return theme.button.background.hover()
+            return theme.input.background.hover()
         else
-            return theme.button.background.default()
+            return theme.input.background.default()
         end
     end, theme.tween.base)
 
     local foregroundColor = tween(function()
         if isSelecting() then
-            return theme.button.foreground.select()
+            return theme.input.foreground.select()
         elseif isPressing() then
-            return theme.button.foreground.press()
+            return theme.input.foreground.press()
         elseif isHovering() then
-            return theme.button.foreground.hover()
+            return theme.input.foreground.hover()
         else
-            return theme.button.foreground.default()
+            return theme.input.foreground.default()
         end
     end, theme.tween.base)
     
     local strokeColor = tween(function()
         if isSelecting() then
-            return theme.button.stroke.select()
+            return theme.input.stroke.select()
         elseif isPressing() then
-            return theme.button.stroke.press()
+            return theme.input.stroke.press()
         elseif isHovering() then
-            return theme.button.stroke.hover()
+            return theme.input.stroke.hover()
         else
-            return theme.button.stroke.default()
+            return theme.input.stroke.default()
         end
     end, theme.tween.base)
     
-    return vide.create "TextButton" {
-        AutomaticSize = Enum.AutomaticSize.XY,
+    return vide.create "TextBox" {
+        AutomaticSize = Enum.AutomaticSize.Y,
         BackgroundColor3 = backgroundColor,
-        Text = "",
-
-        props.icon and props.icon {
-            color = foregroundColor,
-        },
-
-        vide.show(function()
-            return vide.read(props.text)
-        end, function()
-            return vide.create "TextLabel" {
-                Text = props.text,
-                AutomaticSize = Enum.AutomaticSize.XY,
-                BackgroundTransparency = 1,
-                TextColor3 = foregroundColor,
-                TextSize = theme.textSize.base,
-                FontFace = theme.font.default,
-            }
-        end),
-        
-        vide.create "UIListLayout" {
-            Padding = theme.padding.md,
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-        },
+        Text = props.text,
+        TextSize = theme.textSize.base,
+        TextColor3 = foregroundColor,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ClipsDescendants = true,
         
         vide.create "UICorner" {
             CornerRadius = theme.radius.base,
@@ -131,6 +106,16 @@ return function(props: Props)
             end
         end,
 
-        Activated = props.activated,
+        Focused = function()
+            isSelecting(true)
+        end,
+
+        FocusLost = function()
+            isSelecting(false)
+        end,
+
+        vide.changed("Text", function(text)
+            props.textChanged(text)
+        end),
     }
 end

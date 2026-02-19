@@ -33,6 +33,7 @@ export type Theme = {
     },
     input: {
         background: Color3,
+        foreground: Color3,
         stroke: Color3,
         strokeActive: Color3,
     },
@@ -78,6 +79,7 @@ local function getTheme(): Theme
         },
         input = {
             background = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground),
+            foreground = theme:GetColor(Enum.StudioStyleGuideColor.ButtonText),
             stroke = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder),
             strokeActive = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBorder, Enum.StudioStyleGuideModifier.Selected),
         },

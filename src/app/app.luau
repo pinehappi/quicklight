@@ -7,6 +7,7 @@ local toolOrdering = require(script.Parent.Parent.toolOrdering)
 local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 local fadeFrame = require(script.Parent.base.fadeFrame)
+local propertyBar = require(script.Parent.propertyBar)
 local theme = require(script.Parent.theme)
 local toolbar = require(script.Parent.toolbar)
 local tween = require(script.Parent.tween)
@@ -176,10 +177,14 @@ local function useLightSourceSelection(
         if on() and lightSource() == "object" then
             local function updateObject()
                 local selection = Selection:Get()
-                if #selection ~= 1 then return end
+                if #selection ~= 1 then
+                    lightSourceObject(nil)
+                    return
+                end
 
                 local object = selection[1]
                 if not object:IsA("Light") and not object:IsA("BasePart") and not object:IsA("Attachment") then
+                    lightSourceObject(nil)
                     return
                 end
 
@@ -196,7 +201,7 @@ local function useLightSourceSelection(
                 end
 
                 if container and light then
-                    local currentObject = vide.untrack(lightSourceObject)
+                    local currentObject = lightSourceObject()
                     if currentObject and currentObject.light == light and (currentObject.container :: any) == container then
                         return
                     end
@@ -209,7 +214,7 @@ local function useLightSourceSelection(
             end
 
             vide.cleanup(Selection.SelectionChanged:Connect(updateObject))
-            updateObject()
+            vide.untrack(updateObject)
         end
     end)
 end
@@ -318,18 +323,34 @@ return function(props: Props)
 
     return {
         vide.show(props.on, function()
-            return fadeFrame {
-                transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
-                position = toolbarPosition,
-                size = UDim2.new(1, 0, 0, 300),
-                child = toolbar {
-                    tools = tools,
-                    tool = tool,
-                    toolSelected = handleToolSelected,
+            return {
+                fadeFrame {
+                    transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
+                    position = toolbarPosition,
+                    size = UDim2.new(1, 0, 0, 300),
+                    child = vide.create "Frame" {
+                        BackgroundTransparency = 1,
+                        Size = UDim2.fromScale(1, 1),
+                        
+                        toolbar {
+                            tools = tools,
+                            tool = tool,
+                            toolSelected = handleToolSelected,
 
-                    lightSources = lightSources,
-                    lightSource = lightSource,
-                    lightSourceSelected = lightSource,
+                            lightSources = lightSources,
+                            lightSource = lightSource,
+                            lightSourceSelected = lightSource,
+                        },
+
+                        vide.show(function()
+                            return lightSource() ~= "object" or lightSourceObject()
+                        end, function()
+                            return propertyBar {
+                                lightSource = lightSource,
+                                lightSourceObject = lightSourceObject,
+                            }
+                        end),
+                    },
                 },
             }, 0.5
         end)

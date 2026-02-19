@@ -140,6 +140,20 @@ local destroy, theme = vide.root(function()
                     return themeSource().input.background
                 end,
             },
+            foreground = {
+                default = function()
+                    return themeSource().input.foreground
+                end,
+                hover = function()
+                    return themeSource().input.foreground
+                end,
+                press = function()
+                    return themeSource().input.foreground
+                end,
+                select = function()
+                    return themeSource().input.foreground
+                end,
+            },
             stroke = {
                 default = function()
                     return themeSource().input.stroke
