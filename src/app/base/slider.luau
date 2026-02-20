@@ -1,5 +1,7 @@
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
 local theme = require(script.Parent.Parent.theme)
+local tween = require(script.Parent.Parent.tween)
+local useButtonState = require(script.Parent.useButtonState)
 local withDrag = require(script.Parent.withDrag)
 
 export type Props = {
@@ -14,6 +16,8 @@ export type Props = {
 }
 
 return function(props: Props)
+    local isHovering, isPressing, buttonStateProps = useButtonState()
+
     local percent = function()
         return math.clamp(
             (props.value() - vide.read(props.min)) / (vide.read(props.max) :: number - vide.read(props.min)),
@@ -21,6 +25,14 @@ return function(props: Props)
             1
         )
     end
+    
+    local circleSize = tween(function()
+        if isPressing() or isHovering() then
+            return 10
+        else
+            return 0
+        end
+    end, theme.tween.base)
 
     return vide.create "TextButton" {
         BackgroundTransparency = 1,
@@ -57,7 +69,9 @@ return function(props: Props)
 
             vide.create "Frame" {
                 Name = "Circle",
-                Size = UDim2.fromOffset(10, 10),
+                Size = function()
+                    return UDim2.fromOffset(circleSize(), circleSize())
+                end,
                 BackgroundColor3 = props.color or theme.accent.main,
                 AnchorPoint = Vector2.new(0.5, 0.5),
                 Position = function()
@@ -70,10 +84,14 @@ return function(props: Props)
             }
         },
 
-        withDrag(function(percent: number)
-            local unrounded = percent*vide.read(props.max) + (1 - percent)*vide.read(props.min)
-            props.valueChanged(math.round(unrounded / props.step) * props.step)
-        end),
+        { -- need to nest this to avoid the "nested property" dupe check :(
+            withDrag(function(percent: number)
+                local unrounded = percent*vide.read(props.max) + (1 - percent)*vide.read(props.min)
+                props.valueChanged(math.round(unrounded / props.step) * props.step)
+            end),
+        },
+        
+        buttonStateProps,
         
         props.native,
     }

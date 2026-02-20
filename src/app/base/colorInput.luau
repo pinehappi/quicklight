@@ -1,8 +1,10 @@
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
 local theme = require(script.Parent.Parent.theme)
+local tween = require(script.Parent.Parent.tween)
 local popup = require(script.Parent.popup)
 local slider = require(script.Parent.slider)
 local textbox = require(script.Parent.textbox)
+local useButtonState = require(script.Parent.useButtonState)
 local withDrag = require(script.Parent.withDrag)
 
 local CIRCLE_ASSET = "rbxassetid://5552526748"
@@ -87,6 +89,25 @@ local function pickerPopup(props: {
     color: () -> Color3,
     colorChanged: (Color3) -> (),
 })
+    local _, isHuePressing, hueButtonStateProps = useButtonState()
+    local _, isSaturationValuePressing, saturationValueButtonStateProps = useButtonState()
+
+    local hueCircleScale = tween(function()
+        if isHuePressing() then
+            return 1.2
+        else
+            return 1
+        end
+    end, theme.tween.base)
+
+    local saturationValueScale = tween(function()
+        if isSaturationValuePressing() then
+            return 1.2
+        else
+            return 1
+        end
+    end, theme.tween.base)
+
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.XY,
         BackgroundColor3 = theme.surface0.background,
@@ -185,6 +206,10 @@ local function pickerPopup(props: {
                         return UDim2.fromScale(1 - s, 1 - v)
                     end,
 
+                    vide.create "UIScale" {
+                        Scale = saturationValueScale,
+                    },
+
                     vide.create "ImageLabel" {
                         BackgroundTransparency = 1,
                         Image = CIRCLE_ASSET,
@@ -199,6 +224,10 @@ local function pickerPopup(props: {
                     local hue = props.color():ToHSV()
                     props.colorChanged(Color3.fromHSV(hue, 1 - percentX, 1 - percentY))
                 end),
+
+                { -- nest it so it skips the duplicate nested properties error
+                    saturationValueButtonStateProps,
+                }
             },
 
             vide.create "Frame" {
@@ -233,6 +262,10 @@ local function pickerPopup(props: {
                         return UDim2.fromScale(h, 0.5)
                     end,
 
+                    vide.create "UIScale" {
+                        Scale = hueCircleScale,
+                    },
+
                     vide.create "ImageLabel" {
                         BackgroundTransparency = 1,
                         Image = CIRCLE_ASSET,
@@ -249,7 +282,11 @@ local function pickerPopup(props: {
                 withDrag(function(percentX: number, _: number)
                     local _, saturation, value = props.color():ToHSV()
                     props.colorChanged(Color3.fromHSV(percentX, saturation, value))
-                end)
+                end),
+
+                { -- nest to skip the nested duplicate properties error
+                    hueButtonStateProps,
+                }
             }
         },
 
@@ -335,7 +372,7 @@ return function(props: Props)
                 Thickness = theme.strokeThickness,
             },
 
-            Size = UDim2.fromOffset(24, 24),
+            Size = UDim2.fromOffset(12, 24),
 
             Activated = function()
                 isPopupActive(not isPopupActive())

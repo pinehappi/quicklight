@@ -1,6 +1,7 @@
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
 local theme = require(script.Parent.Parent.theme)
 local tween = require(script.Parent.Parent.tween)
+local useButtonState = require(script.Parent.useButtonState)
 
 export type Props = {
     text: string | (() -> string | nil) | nil,
@@ -22,8 +23,7 @@ return function(props: Props)
     local isSelecting: () -> boolean = 
         if type(props.isSelecting) == "function" then props.isSelecting
         else function() return not not props.isSelecting end
-    local isHovering = vide.source(false)
-    local isPressing = vide.source(false)
+    local isHovering, isPressing, buttonStateProps = useButtonState()
     
     local backgroundColor = tween(function()
         if isSelecting() then
@@ -107,30 +107,10 @@ return function(props: Props)
             PaddingBottom = (props.padding and props.padding.bottom) or theme.padding.sm,
         },
 
+        Activated = props.activated,
+
         props.native,
 
-        InputBegan = function(input: InputObject)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                isHovering(true)
-            elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
-                isPressing(true)
-
-                local connection: RBXScriptConnection
-                connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
-                    if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
-                        connection:Disconnect()
-                        isPressing(false)
-                    end
-                end)
-            end
-        end,
-
-        InputEnded = function(input: InputObject)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                isHovering(false)
-            end
-        end,
-
-        Activated = props.activated,
+        buttonStateProps,
     }
 end

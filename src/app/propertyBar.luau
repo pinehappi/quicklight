@@ -132,9 +132,11 @@ return function(props: Props)
         return getSourceInfo(props.lightSource(), props.lightSourceObject())
     end)
 
-    return vide.create "Frame" {
+    -- making it a button so it sinks input
+    return vide.create "TextButton" {
         AutomaticSize = Enum.AutomaticSize.XY,
         BackgroundColor3 = theme.surface0.background,
+        TextTransparency = 1,
         Position = UDim2.new(0.5, 0, 0, 52),
         AnchorPoint = Vector2.new(0.5, 0),
 
