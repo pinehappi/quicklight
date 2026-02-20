@@ -5,6 +5,8 @@ local tween = require(script.Parent.Parent.tween)
 export type Props = {
     text: () -> (string),
     textChanged: (string) -> (),
+    focused: (() -> ())?,
+    focusLost: (() -> ())?,
     padding: {
         left: UDim | () -> UDim,
         right: UDim | () -> UDim,
@@ -108,14 +110,22 @@ return function(props: Props)
 
         Focused = function()
             isSelecting(true)
+            if props.focused then
+                props.focused()
+            end
         end,
 
         FocusLost = function()
             isSelecting(false)
+            if props.focusLost then
+                props.focusLost()
+            end
         end,
 
         vide.changed("Text", function(text)
-            props.textChanged(text)
+            if text ~= props.text() then
+                props.textChanged(text)
+            end
         end),
     }
 end

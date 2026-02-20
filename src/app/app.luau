@@ -358,14 +358,6 @@ return function(props: Props)
                 vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
                     return propertyBar {
                         objectInfo = objectInfo,
-                        propertyChanged = function(property, value)
-                            if isUsingTool() then return end
-                            
-                            local info = objectInfo()
-                            if info then
-                                info.object[property] = value
-                            end
-                        end,
                     }
                 end),
             }

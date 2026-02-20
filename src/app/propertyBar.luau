@@ -1,3 +1,4 @@
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local Properties = require(script.Parent.Parent.core.Properties)
 local theme = require(script.Parent.theme)
@@ -9,7 +10,6 @@ local slider = require(script.Parent.base.slider)
 local function propertyInput(props: {
     object: () -> any,
     property: string,
-    changed: (value: any) -> (),
     order: number | () -> number,
 })
     local object = props.object
@@ -24,6 +24,46 @@ local function propertyInput(props: {
             value(props.object()[props.property])
         end))
     end)
+
+    -- session state
+    local isRecordingSession = false
+    local hasCommittedInSession = false
+    
+    local function startSession()
+        isRecordingSession = true
+        hasCommittedInSession = false
+    end
+
+    local function endSession()
+        isRecordingSession = false
+        hasCommittedInSession = false
+    end
+
+    local function updateProperty(newValue: any)
+        local obj = props.object()
+        if not obj then return end
+        
+        local recording = ChangeHistoryService:TryBeginRecording("set " .. props.property)
+        if not recording then
+            warn("Failed to begin recording for " .. props.property)
+            -- Still apply the change
+            obj[props.property] = newValue
+            return
+        end
+        
+        obj[props.property] = newValue
+        
+        local operation = Enum.FinishRecordingOperation.Commit
+        if isRecordingSession and hasCommittedInSession then
+            operation = Enum.FinishRecordingOperation.Append
+        end
+        
+        ChangeHistoryService:FinishRecording(recording, operation)
+        
+        if isRecordingSession then
+            hasCommittedInSession = true
+        end
+    end
 
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.XY,
@@ -57,17 +97,21 @@ local function propertyInput(props: {
             {
                 numberbox {
                     value = value,
-                    valueChanged = props.changed,
+                    valueChanged = updateProperty,
+                    focused = startSession,
+                    focusLost = endSession,
                     native = {
                         Size = UDim2.fromOffset(50, 0)
                     }
                 },
                 slider {
                     value = value,
-                    valueChanged = props.changed,
+                    valueChanged = updateProperty,
                     min = spec.min,
                     max = spec.max,
                     step = spec.step,
+                    dragBegan = startSession,
+                    dragEnded = endSession,
                     native = {
                         Size = UDim2.fromOffset(50, 12)
                     }
@@ -76,12 +120,16 @@ local function propertyInput(props: {
         elseif spec.type == "Color3" then
             colorInput {
                 color = value,
-                colorChanged = props.changed,
+                colorChanged = updateProperty,
+                dragBegan = startSession,
+                dragEnded = endSession,
+                focused = startSession,
+                focusLost = endSession,
             }
         elseif spec.type == "boolean" then
             checkbox {
                 checked = value,
-                checkedChanged = props.changed,
+                checkedChanged = updateProperty,
             }
         else
             nil
@@ -90,7 +138,6 @@ end
 
 export type Props = {
     objectInfo: () -> Properties.ObjectInfo,
-    propertyChanged: (property: string, value: any) -> (),
 }
 
 return function(props: Props)
@@ -129,9 +176,6 @@ return function(props: Props)
                 object = function() return props.objectInfo().object end,
                 property = property,
                 order = index,
-                changed = function(value)
-                    props.propertyChanged(property, value)
-                end,
             }
         end),
     }

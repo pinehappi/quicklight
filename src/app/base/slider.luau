@@ -11,6 +11,8 @@ export type Props = {
     max: number | (() -> number),
     step: number,
     color: Color3 | (() -> Color3?) | nil,
+    dragBegan: (() -> ())?,
+    dragEnded: (() -> ())?,
 
     native: any,
 }
@@ -88,7 +90,7 @@ return function(props: Props)
             withDrag(function(percent: number)
                 local unrounded = percent*vide.read(props.max) + (1 - percent)*vide.read(props.min)
                 props.valueChanged(math.round(unrounded / props.step) * props.step)
-            end),
+            end, props.dragBegan, props.dragEnded),
         },
         
         buttonStateProps,

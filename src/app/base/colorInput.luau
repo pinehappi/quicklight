@@ -14,6 +14,10 @@ local function rgbComponent(props: {
     value: () -> number,
     valueChanged: (number) -> (),
     color: Color3,
+    dragBegan: (() -> ())?,
+    dragEnded: (() -> ())?,
+    focused: (() -> ())?,
+    focusLost: (() -> ())?,
 })
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.Y,
@@ -59,6 +63,8 @@ local function rgbComponent(props: {
                         props.valueChanged(math.clamp(number, 0, 255))
                     end
                 end,
+                focused = props.focused,
+                focusLost = props.focusLost,
                 padding = {
                     left = theme.padding.xs,
                     right = theme.padding.xs,
@@ -81,6 +87,8 @@ local function rgbComponent(props: {
                 Size = UDim2.new(1, 0, 0, 12),
             },
             color = props.color,
+            dragBegan = props.dragBegan,
+            dragEnded = props.dragEnded,
         },
     }
 end
@@ -88,6 +96,10 @@ end
 local function pickerPopup(props: {
     color: () -> Color3,
     colorChanged: (Color3) -> (),
+    dragBegan: (() -> ())?,
+    dragEnded: (() -> ())?,
+    focused: (() -> ())?,
+    focusLost: (() -> ())?,
 })
     local _, isHuePressing, hueButtonStateProps = useButtonState()
     local _, isSaturationValuePressing, saturationValueButtonStateProps = useButtonState()
@@ -223,7 +235,7 @@ local function pickerPopup(props: {
                 withDrag(function(percentX: number, percentY: number)
                     local hue = props.color():ToHSV()
                     props.colorChanged(Color3.fromHSV(hue, 1 - percentX, 1 - percentY))
-                end),
+                end, props.dragBegan, props.dragEnded),
 
                 { -- nest it so it skips the duplicate nested properties error
                     saturationValueButtonStateProps,
@@ -282,7 +294,7 @@ local function pickerPopup(props: {
                 withDrag(function(percentX: number, _: number)
                     local _, saturation, value = props.color():ToHSV()
                     props.colorChanged(Color3.fromHSV(percentX, saturation, value))
-                end),
+                end, props.dragBegan, props.dragEnded),
 
                 { -- nest to skip the nested duplicate properties error
                     hueButtonStateProps,
@@ -312,6 +324,10 @@ local function pickerPopup(props: {
                 valueChanged = function(r)
                     props.colorChanged(Color3.new(r / 255, props.color().G, props.color().B))
                 end,
+                dragBegan = props.dragBegan,
+                dragEnded = props.dragEnded,
+                focused = props.focused,
+                focusLost = props.focusLost,
             },
 
             rgbComponent {
@@ -323,6 +339,10 @@ local function pickerPopup(props: {
                 valueChanged = function(g)
                     props.colorChanged(Color3.new(props.color().R, g / 255, props.color().B))
                 end,
+                dragBegan = props.dragBegan,
+                dragEnded = props.dragEnded,
+                focused = props.focused,
+                focusLost = props.focusLost,
             },
 
             rgbComponent {
@@ -334,6 +354,10 @@ local function pickerPopup(props: {
                 valueChanged = function(b)
                     props.colorChanged(Color3.new(props.color().R, props.color().G, b / 255))
                 end,
+                dragBegan = props.dragBegan,
+                dragEnded = props.dragEnded,
+                focused = props.focused,
+                focusLost = props.focusLost,
             },
         },
     }
@@ -342,6 +366,10 @@ end
 export type Props = {
     color: () -> Color3,
     colorChanged: (Color3) -> (),
+    dragBegan: (() -> ())?,
+    dragEnded: (() -> ())?,
+    focused: (() -> ())?,
+    focusLost: (() -> ())?,
     native: any,
 }
 
@@ -391,7 +419,11 @@ return function(props: Props)
                     end,
                     children = pickerPopup {
                         color = props.color,
-                        colorChanged = props.colorChanged
+                        colorChanged = props.colorChanged,
+                        dragBegan = props.dragBegan,
+                        dragEnded = props.dragEnded,
+                        focused = props.focused,
+                        focusLost = props.focusLost,
                     },
                     native = {
                         AutomaticSize = Enum.AutomaticSize.XY,
@@ -410,6 +442,8 @@ return function(props: Props)
                     props.colorChanged(value)
                 end
             end,
+            focused = props.focused,
+            focusLost = props.focusLost,
 
             native = {
                 Size = UDim2.fromOffset(60, 0),
