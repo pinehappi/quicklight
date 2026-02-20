@@ -110,14 +110,10 @@ local function updatePosition(camera: Camera, entry: LightEntry)
     
     local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
 
-    if onScreen and 0 < screenPos.Z and screenPos.Z <= 1000 then
-        entry.icon.Visible = true
-        local scale = math.clamp(50 / screenPos.Z, 0.2, 1)
-        entry.icon.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
-        entry.icon.Size = UDim2.fromOffset(SIZE * scale, SIZE * scale)
-    else
-        entry.icon.Visible = false
-    end
+    local scale = math.clamp(50 / screenPos.Z, 0.2, 1)
+    entry.icon.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
+    entry.icon.Size = UDim2.fromOffset(SIZE * scale, SIZE * scale)
+    entry.icon.Visible = onScreen and 0 < screenPos.Z and screenPos.Z <= 1000
 end
 
 export type LightVisualizerOptions = {
