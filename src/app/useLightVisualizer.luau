@@ -7,6 +7,8 @@ local vide = require(script.Parent.Parent.Packages.vide)
 local SIZE = 60
 local SELECTED_ATTRIBUTE = "selected"
 
+local DRAGGER_ICON = "rbxassetid://6710235139"
+
 local icons = {
     PointLight = {
         base = "rbxassetid://103397983899667",
@@ -33,14 +35,17 @@ type LightEntry = {
 local function updateButtonState(button: any)
     if button:GetAttribute(SELECTED_ATTRIBUTE) then
         button.Stroke.ImageTransparency = 0.3
+        button.Drag.Visible = true
     elseif button.GuiState == Enum.GuiState.Hover or button.GuiState == Enum.GuiState.Press then
         button.Stroke.ImageTransparency = 0.8
+        button.Drag.Visible = true
     else
         button.Stroke.ImageTransparency = 1
+        button.Drag.Visible = false
     end
 end
 
-local function createIcon(light: Light): (any, any)
+local function createIcon(light: Light, dragClicked: () -> ()): (any, any)
     local icon = Instance.new("Frame")
     icon.BackgroundTransparency = 1
     icon.Size = UDim2.fromOffset(0, 0)
@@ -66,9 +71,21 @@ local function createIcon(light: Light): (any, any)
     stroke.Size = UDim2.fromScale(1, 1)
     stroke.Parent = button
 
+    local dragButton = Instance.new("ImageButton")
+    dragButton.BackgroundTransparency = 1
+    dragButton.Size = UDim2.fromScale(0.3, 0.3)
+    dragButton.Position = UDim2.fromScale(1, 0)
+    dragButton.AnchorPoint = Vector2.new(1, 0)
+    dragButton.Image = DRAGGER_ICON
+    dragButton.Visible = false
+    dragButton.Name = "Drag"
+    dragButton.Parent = button
+    
     button:GetPropertyChangedSignal("GuiState"):Connect(function()
         updateButtonState(button)
     end)
+
+    dragButton.Activated:Connect(dragClicked)
     
     return icon, button
 end
@@ -117,11 +134,13 @@ local function updatePosition(camera: Camera, entry: LightEntry)
 end
 
 export type LightVisualizerOptions = {
+    plugin: Plugin,
     active: () -> boolean,
     lightSourceObject: () -> types.LightSourceObject?,
 }
 
 return function(options: LightVisualizerOptions)
+    local plugin = options.plugin
     local activeEntries: {[Light]: LightEntry} = {}
     local entryList: {LightEntry} = {}
 
@@ -156,7 +175,16 @@ return function(options: LightVisualizerOptions)
         local function addLight(light: Light)
             if activeEntries[light] then return end
             
-            local icon, button = createIcon(light)
+            local icon, button = createIcon(light, function()
+                local entry = activeEntries[light]
+                if entry then
+                    if entry.attachment or entry.basePart then
+                        Selection:Set({entry.attachment or entry.basePart})
+                        plugin:SelectRibbonTool(Enum.RibbonTool.Move, UDim2.fromOffset(0, 0))
+                    end
+                end
+            end)
+
             icon.Parent = screenGui
             
             local connections = table.create(2)
