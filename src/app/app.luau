@@ -223,7 +223,7 @@ local function useLightSourceSelection(
         elseif on() then
             local object = vide.untrack(lightSourceObject)
             if object then
-                lightSourceObject(nil)
+                --lightSourceObject(nil)
 
                 local current = Selection:Get()
                 if #current == 1 and (object.light == current[1] or object.container == current[1]) then
