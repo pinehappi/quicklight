@@ -4,7 +4,23 @@ local Selection = game:GetService("Selection")
 local types = require("../types")
 local vide = require(script.Parent.Parent.Packages.vide)
 
-local SIZE = 30
+local SIZE = 60
+local SELECTED_ATTRIBUTE = "selected"
+
+local icons = {
+    PointLight = {
+        base = "rbxassetid://103397983899667",
+        stroke = "rbxassetid://122499091104026",
+    },
+    SpotLight = {
+        base = "rbxassetid://136480611134115",
+        stroke = "rbxassetid://132148522699281",
+    },
+    SurfaceLight = {
+        base = "rbxassetid://82988569343018",
+        stroke = "rbxassetid://132048990155932",
+    },
+}
 
 type LightEntry = {
     light: Light,
@@ -14,38 +30,56 @@ type LightEntry = {
     connections: {RBXScriptConnection},
 }
 
-local function createIcon(light: Light): (Frame, TextButton)
+local function updateButtonState(button: any)
+    if button:GetAttribute(SELECTED_ATTRIBUTE) then
+        button.Stroke.ImageTransparency = 0.3
+    elseif button.GuiState == Enum.GuiState.Hover or button.GuiState == Enum.GuiState.Press then
+        button.Stroke.ImageTransparency = 0.8
+    else
+        button.Stroke.ImageTransparency = 1
+    end
+end
+
+local function createIcon(light: Light): (any, any)
     local icon = Instance.new("Frame")
-    icon.BackgroundColor3 = light.Color
+    icon.BackgroundTransparency = 1
     icon.Size = UDim2.fromOffset(0, 0)
     icon.AnchorPoint = Vector2.new(0.5, 0.5)
     icon.Name = "LightVisualizerIcon"
     icon.Visible = false
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = icon
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.new(0, 0, 0)
-    stroke.Thickness = 1.5
-    stroke.Transparency = 0.2
-    stroke.Parent = icon
-    
-    local button = Instance.new("TextButton")
+    local button = Instance.new("ImageButton")
+    button.Name = "Button"
     button.BackgroundTransparency = 1
-    button.Text = ""
+    button.ImageTransparency = 0.2
+    button.Image = icons[light.ClassName].base
+    button.ImageColor3 = light.Color
     button.Size = UDim2.fromScale(1, 1)
     button.Parent = icon
+
+    local stroke = Instance.new("ImageLabel")
+    stroke.Name = "Stroke"
+    stroke.BackgroundTransparency = 1
+    stroke.ImageTransparency = 1
+    stroke.Image = icons[light.ClassName].stroke
+    stroke.ImageColor3 = light.Color
+    stroke.Size = UDim2.fromScale(1, 1)
+    stroke.Parent = button
+
+    button:GetPropertyChangedSignal("GuiState"):Connect(function()
+        updateButtonState(button)
+    end)
     
     return icon, button
 end
 
 local function updateSelecting(entry: LightEntry, isSelecting: boolean)
     if isSelecting then
-        entry.icon.UIStroke.Color = Color3.new(0, 0, 1)
+        entry.icon.Button:SetAttribute(SELECTED_ATTRIBUTE, true)
+        updateButtonState(entry.icon.Button)
     else
-        entry.icon.UIStroke.Color = Color3.new(0, 0, 0)
+        entry.icon.Button:SetAttribute(SELECTED_ATTRIBUTE, nil)
+        updateButtonState(entry.icon.Button)
     end
 end
 
@@ -128,7 +162,7 @@ return function(options: LightVisualizerOptions)
             local icon, button = createIcon(light)
             icon.Parent = screenGui
             
-            local connections = table.create(3)
+            local connections = table.create(2)
             local entry: LightEntry = {
                 light = light,
                 icon = icon,
@@ -139,7 +173,8 @@ return function(options: LightVisualizerOptions)
             table.insert(entryList, entry)
 
             table.insert(connections, light:GetPropertyChangedSignal("Color"):Connect(function()
-                icon.BackgroundColor3 = light.Color
+                button.ImageColor3 = light.Color
+                button.Stroke.ImageColor3 = light.Color
             end))
             
             table.insert(connections, light:GetPropertyChangedSignal("Parent"):Connect(function()
@@ -152,14 +187,14 @@ return function(options: LightVisualizerOptions)
             end))
             updateAdornee(entry)
 
-            table.insert(connections, button.Activated:Connect(function()
+            button.Activated:Connect(function()
                 local current = Selection:Get()
                 if #current == 1 and current[1] == light then
                     Selection:Set({})
                 else
                     Selection:Set({light})
                 end
-            end))
+            end)
         end
 
         -- Initial Scan using QueryDescendants
