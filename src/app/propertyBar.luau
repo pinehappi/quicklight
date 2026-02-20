@@ -9,6 +9,7 @@ local slider = require(script.Parent.base.slider)
 local function propertyInput(props: {
     object: () -> any,
     property: string,
+    changed: (value: any) -> (),
     order: number | () -> number,
 })
     local object = props.object
@@ -19,6 +20,9 @@ local function propertyInput(props: {
 
     vide.effect(function()
         value(props.object()[props.property])
+        vide.cleanup(props.object():GetPropertyChangedSignal(props.property):Connect(function()
+            value(props.object()[props.property])
+        end))
     end)
 
     return vide.create "Frame" {
@@ -53,14 +57,14 @@ local function propertyInput(props: {
             {
                 numberbox {
                     value = value,
-                    valueChanged = value,
+                    valueChanged = props.changed,
                     native = {
                         Size = UDim2.fromOffset(50, 0)
                     }
                 },
                 slider {
                     value = value,
-                    valueChanged = value,
+                    valueChanged = props.changed,
                     min = spec.min,
                     max = spec.max,
                     step = spec.step,
@@ -72,12 +76,12 @@ local function propertyInput(props: {
         elseif spec.type == "Color3" then
             colorInput {
                 color = value,
-                colorChanged = value,
+                colorChanged = props.changed,
             }
         elseif spec.type == "boolean" then
             checkbox {
                 checked = value,
-                checkedChanged = value,
+                checkedChanged = props.changed,
             }
         else
             nil
@@ -86,6 +90,7 @@ end
 
 export type Props = {
     objectInfo: () -> Properties.ObjectInfo,
+    propertyChanged: (property: string, value: any) -> (),
 }
 
 return function(props: Props)
@@ -124,6 +129,9 @@ return function(props: Props)
                 object = function() return props.objectInfo().object end,
                 property = property,
                 order = index,
+                changed = function(value)
+                    props.propertyChanged(property, value)
+                end,
             }
         end),
     }

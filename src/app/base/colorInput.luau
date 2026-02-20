@@ -405,7 +405,10 @@ return function(props: Props)
                 return "#" .. props.color():ToHex()
             end,
             textChanged = function(text)
-                
+                local success, value = pcall(Color3.fromHex, text)
+                if success then
+                    props.colorChanged(value)
+                end
             end,
 
             native = {

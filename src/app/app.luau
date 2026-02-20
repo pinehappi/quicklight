@@ -358,6 +358,12 @@ return function(props: Props)
                         vide.show(function() return objectInfo() end, function(objectInfo: any)
                             return propertyBar {
                                 objectInfo = objectInfo,
+                                propertyChanged = function(property, value)
+                                    local info = objectInfo()
+                                    if info then
+                                        info.object[property] = value
+                                    end
+                                end,
                             }
                         end),
                     },
