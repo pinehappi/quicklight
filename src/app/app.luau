@@ -231,6 +231,15 @@ local function useLightSourceSelection(
     end)
 end
 
+local function getFirstAvailableTool(tools: {string}): string?
+    for _, tool in toolOrdering do
+        if table.find(tools, tool) then
+            return tool
+        end
+    end
+    return nil
+end
+
 export type Props = {
     on: () -> boolean,
     onChanged: (boolean) -> (),
@@ -268,12 +277,7 @@ return function(props: Props)
     local tool = vide.derive(function(): string?
         local tools = tools()
         if toolBacking() and not table.find(tools, toolBacking()) then
-            for _, tool in toolOrdering do
-                if table.find(tools, tool) then
-                    return tool
-                end
-            end
-            return nil
+            return getFirstAvailableTool(tools)
         else
             return toolBacking()
         end
@@ -289,6 +293,13 @@ return function(props: Props)
             toolBacking(nil)
         else
             toolBacking(newTool)
+        end
+    end
+
+    local function handleLightSourceSelected(newLightSource)
+        lightSource(newLightSource)
+        if toolBacking() == nil then
+            toolBacking(getFirstAvailableTool(tools()))
         end
     end
 
@@ -324,7 +335,7 @@ return function(props: Props)
         isUsingTool = isUsingTool,
         lightSources = lightSources,
         lightSource = lightSource,
-        lightSourceSelected = lightSource,
+        lightSourceSelected = handleLightSourceSelected,
         tools = tools,
         tool = tool,
         toolSelected = handleToolSelected,
@@ -368,7 +379,7 @@ return function(props: Props)
 
                     lightSources = lightSources,
                     lightSource = lightSource,
-                    lightSourceSelected = lightSource,
+                    lightSourceSelected = handleLightSourceSelected,
                 },
 
                 vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
