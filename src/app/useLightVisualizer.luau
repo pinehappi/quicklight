@@ -86,7 +86,7 @@ local function updatePosition(camera: Camera, entry: LightEntry)
 end
 
 export type LightVisualizerOptions = {
-    on: () -> boolean,
+    active: () -> boolean,
     lightSourceObject: () -> types.LightSourceObject?,
 }
 
@@ -95,7 +95,7 @@ return function(options: LightVisualizerOptions)
     local entryList: {LightEntry} = {}
 
     vide.effect(function()
-        if not options.on() then return end
+        if not options.active() then return end
 
         local camera = workspace.CurrentCamera
 
@@ -204,6 +204,8 @@ return function(options: LightVisualizerOptions)
 
     local previousLight: Light? = nil
     vide.effect(function()
+        if not options.active() then return end
+        
         local object = options.lightSourceObject()
         local currentLight = object and object.light or nil
         if currentLight ~= previousLight then

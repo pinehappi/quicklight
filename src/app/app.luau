@@ -329,7 +329,9 @@ return function(props: Props)
     useLightSourceSelection(props.on, lightSource, lightSourceObject)
 
     useLightVisualizer({
-        on = props.on,
+        active = function()
+            return props.on() and lightSource() == "object"
+        end,
         lightSourceObject = lightSourceObject,
     })
 
