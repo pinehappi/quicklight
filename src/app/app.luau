@@ -134,7 +134,8 @@ local function useHotkeys(options: {
     lightSourceSelected: (string) -> (),
     tools: () -> {string},
     tool: () -> string?,
-    toolSelected: (string?) -> ()
+    toolSelected: (string?) -> (),
+    propertiesEnabledToggled: () -> (),
 })
     vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
         if not options.on() then return end
@@ -164,6 +165,8 @@ local function useHotkeys(options: {
             else
                 options.lightSourceSelected(lightSources[lightSourceIndex % #lightSources + 1])
             end
+        elseif input.KeyCode == Enum.KeyCode.P and input:IsModifierKeyDown(Enum.ModifierKey.Shift) then
+            options.propertiesEnabledToggled()
         end
     end))
 end
@@ -339,6 +342,9 @@ return function(props: Props)
         tools = tools,
         tool = tool,
         toolSelected = handleToolSelected,
+        propertiesEnabledToggled = function()
+            isPropertiesEnabled(not isPropertiesEnabled())
+        end,
     })
 
     vide.effect(function()
