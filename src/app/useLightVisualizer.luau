@@ -3,16 +3,20 @@ local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 local vide = require(script.Parent.Parent.Packages.vide)
 
+local SIZE = 30
+
 type LightEntry = {
     light: Light,
-    adornee: Instance,
+    basePart: BasePart?,
+    attachment: Attachment?,
     icon: Frame,
+    connections: {RBXScriptConnection},
 }
 
 local function createIcon(light: Light): (Frame, TextButton)
     local icon = Instance.new("Frame")
     icon.BackgroundColor3 = light.Color
-    icon.Size = UDim2.fromOffset(12, 12)
+    icon.Size = UDim2.fromOffset(0, 0)
     icon.AnchorPoint = Vector2.new(0.5, 0.5)
     icon.Name = "LightVisualizerIcon"
     icon.Visible = false
@@ -36,9 +40,47 @@ local function createIcon(light: Light): (Frame, TextButton)
     return icon, button
 end
 
+local function updateAdornee(entry: LightEntry)
+    local parent = entry.light.Parent
+    if parent and parent:IsA("BasePart") then
+        entry.basePart = parent
+        entry.attachment = nil
+    elseif parent and parent:IsA("Attachment") then
+        entry.basePart = nil
+        entry.attachment = parent
+    else
+        entry.basePart = nil
+        entry.attachment = nil
+    end
+end
+
+local function updatePosition(camera: Camera, entry: LightEntry)
+    local worldPos: Vector3
+    if entry.basePart then
+        worldPos = entry.basePart.Position
+    elseif entry.attachment then
+        worldPos = entry.attachment.WorldPosition
+    else
+        entry.icon.Visible = false
+        return
+    end
+    
+    local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
+    if onScreen and screenPos.Z <= 1000 then
+        local scale = math.clamp(50 / screenPos.Z, 0.2, 1)
+        entry.icon.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
+        entry.icon.Size = UDim2.fromOffset(SIZE * scale, SIZE * scale)
+        entry.icon.Visible = true
+    else
+        entry.icon.Visible = false
+    end
+end
+
 return function(on: () -> boolean)
     vide.effect(function()
         if not on() then return end
+
+        local camera = workspace.CurrentCamera
 
         local screenGui = Instance.new("ScreenGui")
         screenGui.Name = "LightVisualizers"
@@ -46,7 +88,6 @@ return function(on: () -> boolean)
         screenGui.Parent = CoreGui
 
         local activeEntries: {[Light]: LightEntry} = {}
-        local activeConnections: {[Light]: {RBXScriptConnection}} = {}
         local entryList: {LightEntry} = {}
 
         local function removeLight(light: Light)
@@ -59,39 +100,29 @@ return function(on: () -> boolean)
                 if index then
                     table.remove(entryList, index)
                 end
-            end
-            
-            local connections = activeConnections[light]
-            if connections then
-                for _, conn in connections do
-                    conn:Disconnect()
+
+                for _, connection in entry.connections do
+                    connection:Disconnect()
                 end
-                activeConnections[light] = nil
             end
         end
 
         local function addLight(light: Light)
             if activeEntries[light] then return end
             
-            local adornee = light.Parent
-            if not adornee or (not adornee:IsA("BasePart") and not adornee:IsA("Attachment")) then
-                return 
-            end
-
             local icon, button = createIcon(light)
             icon.Parent = screenGui
             
+            local connections = table.create(3)
             local entry: LightEntry = {
                 light = light,
-                adornee = adornee,
                 icon = icon,
+                connections = connections,
             }
-            
+
             activeEntries[light] = entry
             table.insert(entryList, entry)
 
-            local connections = table.create(3)
-            
             table.insert(connections, light:GetPropertyChangedSignal("Color"):Connect(function()
                 icon.BackgroundColor3 = light.Color
             end))
@@ -99,17 +130,20 @@ return function(on: () -> boolean)
             table.insert(connections, light:GetPropertyChangedSignal("Parent"):Connect(function()
                 local newParent = light.Parent
                 if newParent and (newParent:IsA("BasePart") or newParent:IsA("Attachment")) then
-                    entry.adornee = newParent
+                    updateAdornee(entry)
                 else
                     removeLight(light)
                 end
             end))
+            updateAdornee(entry)
 
             table.insert(connections, button.Activated:Connect(function()
                 Selection:Set({light})
             end))
             
-            activeConnections[light] = connections
+            if camera then
+                updatePosition(camera, entry)
+            end
         end
 
         -- Initial Scan using QueryDescendants
@@ -118,50 +152,31 @@ return function(on: () -> boolean)
         end
 
         -- Dynamic Tracking
-        local descendantAdded = workspace.DescendantAdded:Connect(function(descendant)
+        vide.cleanup(workspace.DescendantAdded:Connect(function(descendant)
             if descendant:IsA("Light") then
                 addLight(descendant)
             end
-        end)
+        end))
 
-        local descendantRemoving = workspace.DescendantRemoving:Connect(function(descendant)
+        vide.cleanup(workspace.DescendantRemoving:Connect(function(descendant)
             if descendant:IsA("Light") then
                 removeLight(descendant)
             end
-        end)
+        end))
 
         -- Projection Loop
-        local camera = workspace.CurrentCamera
         if camera then
-            vide.cleanup(RunService.RenderStepped:Connect(function()
+            vide.cleanup(RunService.PreRender:Connect(function()
                 for _, entry in entryList do
-                    local worldPos: Vector3
-                    if entry.adornee:IsA("BasePart") then
-                        worldPos = entry.adornee.Position
-                    elseif entry.adornee:IsA("Attachment") then
-                        worldPos = entry.adornee.WorldPosition
-                    else
-                        entry.icon.Visible = false
-                        continue
-                    end
-                    
-                    local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
-                    if onScreen then
-                        entry.icon.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
-                        entry.icon.Visible = true
-                    else
-                        entry.icon.Visible = false
-                    end
+                    updatePosition(camera, entry)
                 end
             end))
         end
 
         vide.cleanup(function()
             screenGui:Destroy()
-            descendantAdded:Disconnect()
-            descendantRemoving:Disconnect()
-            for _, connections in activeConnections do
-                for _, connection in connections do
+            for _, entries in activeEntries do
+                for _, connection in entries.connections do
                     connection:Disconnect()
                 end
             end
