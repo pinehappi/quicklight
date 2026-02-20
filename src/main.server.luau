@@ -1,4 +1,4 @@
-local NAME = "lazylight"
+local NAME = "quicklight"
 
 local vide = require(script.Parent.Packages.vide)
 local app = require(script.Parent.app.app)
