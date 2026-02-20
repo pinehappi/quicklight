@@ -217,6 +217,16 @@ local function useLightSourceSelection(
 
             vide.cleanup(Selection.SelectionChanged:Connect(updateObject))
             vide.untrack(updateObject)
+        elseif on() then
+            local object = vide.untrack(lightSourceObject)
+            if object then
+                lightSourceObject(nil)
+
+                local current = Selection:Get()
+                if #current == 1 and (object.light == current[1] or object.container == current[1]) then
+                    Selection:Set({})
+                end
+            end
         end
     end)
 end
@@ -303,7 +313,11 @@ return function(props: Props)
     end, 0.18, 1)
 
     useLightSourceSelection(props.on, lightSource, lightSourceObject)
-    useLightVisualizer(props.on)
+
+    useLightVisualizer({
+        on = props.on,
+        lightSourceObject = lightSourceObject,
+    })
 
     useHotkeys({
         on = props.on,

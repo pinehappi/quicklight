@@ -1,6 +1,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
+local types = require("../types")
 local vide = require(script.Parent.Parent.Packages.vide)
 
 local SIZE = 30
@@ -9,7 +10,7 @@ type LightEntry = {
     light: Light,
     basePart: BasePart?,
     attachment: Attachment?,
-    icon: Frame,
+    icon: any,
     connections: {RBXScriptConnection},
 }
 
@@ -40,6 +41,14 @@ local function createIcon(light: Light): (Frame, TextButton)
     return icon, button
 end
 
+local function updateSelecting(entry: LightEntry, isSelecting: boolean)
+    if isSelecting then
+        entry.icon.UIStroke.Color = Color3.new(0, 0, 1)
+    else
+        entry.icon.UIStroke.Color = Color3.new(0, 0, 0)
+    end
+end
+
 local function updateAdornee(entry: LightEntry)
     local parent = entry.light.Parent
     if parent and parent:IsA("BasePart") then
@@ -66,29 +75,35 @@ local function updatePosition(camera: Camera, entry: LightEntry)
     end
     
     local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
-    if onScreen and screenPos.Z <= 1000 then
+    if onScreen and 0 < screenPos.Z and screenPos.Z <= 1000 then
+        entry.icon.Visible = true
         local scale = math.clamp(50 / screenPos.Z, 0.2, 1)
         entry.icon.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
         entry.icon.Size = UDim2.fromOffset(SIZE * scale, SIZE * scale)
-        entry.icon.Visible = true
     else
         entry.icon.Visible = false
     end
 end
 
-return function(on: () -> boolean)
+export type LightVisualizerOptions = {
+    on: () -> boolean,
+    lightSourceObject: () -> types.LightSourceObject?,
+}
+
+return function(options: LightVisualizerOptions)
+    local activeEntries: {[Light]: LightEntry} = {}
+    local entryList: {LightEntry} = {}
+
     vide.effect(function()
-        if not on() then return end
+        if not options.on() then return end
 
         local camera = workspace.CurrentCamera
 
         local screenGui = Instance.new("ScreenGui")
         screenGui.Name = "LightVisualizers"
+        screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         screenGui.DisplayOrder = -1
         screenGui.Parent = CoreGui
-
-        local activeEntries: {[Light]: LightEntry} = {}
-        local entryList: {LightEntry} = {}
 
         local function removeLight(light: Light)
             local entry = activeEntries[light]
@@ -138,12 +153,13 @@ return function(on: () -> boolean)
             updateAdornee(entry)
 
             table.insert(connections, button.Activated:Connect(function()
-                Selection:Set({light})
+                local current = Selection:Get()
+                if #current == 1 and current[1] == light then
+                    Selection:Set({})
+                else
+                    Selection:Set({light})
+                end
             end))
-            
-            if camera then
-                updatePosition(camera, entry)
-            end
         end
 
         -- Initial Scan using QueryDescendants
@@ -180,6 +196,32 @@ return function(on: () -> boolean)
                     connection:Disconnect()
                 end
             end
+            
+            activeEntries = {}
+            entryList = {}
         end)
+    end)
+
+    local previousLight: Light? = nil
+    vide.effect(function()
+        local object = options.lightSourceObject()
+        local currentLight = object and object.light or nil
+        if currentLight ~= previousLight then
+            if previousLight then
+                local entry = activeEntries[previousLight]
+                if entry then
+                    updateSelecting(entry, false)
+                end
+            end
+
+            if currentLight then
+                local entry = activeEntries[currentLight]
+                if entry then
+                    updateSelecting(entry, true)
+                end
+            end
+        end
+
+        previousLight = currentLight
     end)
 end
