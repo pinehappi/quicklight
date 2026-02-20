@@ -127,6 +127,7 @@ local NUMBER_KEYCODES = {
 -- light source + tool selecting hotkeys
 local function useHotkeys(options: {
     on: () -> boolean,
+    isUsingTool: () -> boolean,
     lightSources: () -> {string},
     lightSource: () -> string,
     lightSourceSelected: (string) -> (),
@@ -134,37 +135,36 @@ local function useHotkeys(options: {
     tool: () -> string?,
     toolSelected: (string?) -> ()
 })
-     vide.effect(function()
-        if options.on() then
-            vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
-                local number = NUMBER_KEYCODES[input.KeyCode]
-                local tools = options.tools()
-                if number and number <= #tools and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
-                    local found = 0
-                    for _, tool in toolOrdering do
-                        if table.find(tools, tool) then
-                            found += 1
-                        end
+    vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
+        if not options.on() then return end
+        if options.isUsingTool() then return end
 
-                        if found == number then
-                            options.toolSelected(tool)
-                            break
-                        end
-                    end
-                elseif input.KeyCode == Enum.KeyCode.Tab then
-                    local lightSources = options.lightSources()
-                    local lightSourceIndex = table.find(lightSources, options.lightSource())
-                    if not lightSourceIndex then return end
-
-                    if input:IsModifierKeyDown(Enum.ModifierKey.Shift) then
-                        options.lightSourceSelected(lightSources[(lightSourceIndex - 2) % #lightSources + 1])
-                    else
-                        options.lightSourceSelected(lightSources[lightSourceIndex % #lightSources + 1])
-                    end
+        local number = NUMBER_KEYCODES[input.KeyCode]
+        local tools = options.tools()
+        if number and number <= #tools and input:IsModifierKeyDown(Enum.ModifierKey.Ctrl) then
+            local found = 0
+            for _, tool in toolOrdering do
+                if table.find(tools, tool) then
+                    found += 1
                 end
-            end))
+
+                if found == number then
+                    options.toolSelected(tool)
+                    break
+                end
+            end
+        elseif input.KeyCode == Enum.KeyCode.Tab then
+            local lightSources = options.lightSources()
+            local lightSourceIndex = table.find(lightSources, options.lightSource())
+            if not lightSourceIndex then return end
+
+            if input:IsModifierKeyDown(Enum.ModifierKey.Shift) then
+                options.lightSourceSelected(lightSources[(lightSourceIndex - 2) % #lightSources + 1])
+            else
+                options.lightSourceSelected(lightSources[lightSourceIndex % #lightSources + 1])
+            end
         end
-    end)
+    end))
 end
 
 -- handling tracking object for "object" mode
@@ -304,6 +304,7 @@ return function(props: Props)
 
     useHotkeys({
         on = props.on,
+        isUsingTool = isUsingTool,
         lightSources = lightSources,
         lightSource = lightSource,
         lightSourceSelected = lightSource,
