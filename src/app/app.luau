@@ -268,7 +268,7 @@ return function(props: Props)
         end
     end)
 
-    local isPropertiesEnabled = vide.source(false)
+    local isPropertiesEnabled = vide.source(true)
     local objectInfo = vide.derive(function()
         return Properties.getObjectInfo(lightSource(), lightSourceObject())
     end)
@@ -337,42 +337,46 @@ return function(props: Props)
 
     return {
         vide.show(props.on, function()
+            local content = vide.create "Frame" {
+                BackgroundTransparency = 1,
+                Size = UDim2.fromScale(1, 1),
+                
+                toolbar {
+                    isPropertiesAvailable = function() return not not objectInfo() end,
+                    isPropertiesEnabled = isPropertiesEnabled,
+                    propertiesEnabledChanged = isPropertiesEnabled,
+                    
+                    tools = tools,
+                    tool = tool,
+                    toolSelected = handleToolSelected,
+
+                    lightSources = lightSources,
+                    lightSource = lightSource,
+                    lightSourceSelected = lightSource,
+                },
+
+                vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
+                    return propertyBar {
+                        objectInfo = objectInfo,
+                        propertyChanged = function(property, value)
+                            if isUsingTool() then return end
+                            
+                            local info = objectInfo()
+                            if info then
+                                info.object[property] = value
+                            end
+                        end,
+                    }
+                end),
+            }
+            
             return {
                 fadeFrame {
                     transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
                     position = toolbarPosition,
-                    size = UDim2.new(1, 0, 0, 300),
-                    child = vide.create "Frame" {
-                        BackgroundTransparency = 1,
-                        Size = UDim2.fromScale(1, 1),
-                        
-                        toolbar {
-                            isPropertiesAvailable = function() return not not objectInfo() end,
-                            isPropertiesEnabled = isPropertiesEnabled,
-                            propertiesEnabledChanged = isPropertiesEnabled,
-                            
-                            tools = tools,
-                            tool = tool,
-                            toolSelected = handleToolSelected,
-
-                            lightSources = lightSources,
-                            lightSource = lightSource,
-                            lightSourceSelected = lightSource,
-                        },
-
-                        vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
-                            return propertyBar {
-                                objectInfo = objectInfo,
-                                propertyChanged = function(property, value)
-                                    local info = objectInfo()
-                                    if info then
-                                        info.object[property] = value
-                                    end
-                                end,
-                            }
-                        end),
-                    },
-                },
+                    size = UDim2.new(1, 0, 0, 150),
+                    child = content,
+                }
             }, 0.5
         end)
     }
