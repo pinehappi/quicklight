@@ -2,6 +2,7 @@ local CoreGui = game:GetService("CoreGui")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
+local Properties = require(script.Parent.Parent.core.Properties)
 local runTool = require(script.Parent.Parent.core.runTool)
 local toolOrdering = require(script.Parent.Parent.toolOrdering)
 local tools = require(script.Parent.Parent.tools)
@@ -267,6 +268,10 @@ return function(props: Props)
         end
     end)
 
+    local objectInfo = vide.derive(function()
+        return Properties.getObjectInfo(lightSource(), lightSourceObject())
+    end)
+
     local function handleToolSelected(newTool)
         if tool() == newTool then
             toolBacking(nil)
@@ -281,9 +286,16 @@ return function(props: Props)
         local y = 0
         if not props.on() then
             y -= 60
+            -- properties are visible, push up even more
+            if objectInfo() then
+                y -= 30
+            end
         end
         if isUsingTool() then
             y -= 28
+            if objectInfo() then
+                y -= 40
+            end
         end
         return UDim2.fromOffset(0, y)
     end, 0.18, 1)
@@ -342,12 +354,9 @@ return function(props: Props)
                             lightSourceSelected = lightSource,
                         },
 
-                        vide.show(function()
-                            return lightSource() ~= "object" or lightSourceObject()
-                        end, function()
+                        vide.show(function() return objectInfo() end, function(objectInfo: any)
                             return propertyBar {
-                                lightSource = lightSource,
-                                lightSourceObject = lightSourceObject,
+                                objectInfo = objectInfo,
                             }
                         end),
                     },

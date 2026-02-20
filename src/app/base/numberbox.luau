@@ -10,7 +10,7 @@ export type Props = {
 return function(props: Props)
     return textbox {
         text = function()
-            return tostring(props.value())
+            return tostring(math.floor(props.value() * 10000) / 10000)
         end,
         textChanged = function(text)
             local number = tonumber(text)

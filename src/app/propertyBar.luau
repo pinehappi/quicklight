@@ -1,68 +1,25 @@
-local Lighting = game:GetService("Lighting")
 local vide = require(script.Parent.Parent.Packages.vide)
+local Properties = require(script.Parent.Parent.core.Properties)
 local theme = require(script.Parent.theme)
-local types = require(script.Parent.Parent.types)
 local checkbox = require(script.Parent.base.checkbox)
 local colorInput = require(script.Parent.base.colorInput)
 local numberbox = require(script.Parent.base.numberbox)
 local slider = require(script.Parent.base.slider)
 
-export type Props = {
-    lightSource: () -> string,
-    lightSourceObject: () -> types.LightSourceObject?,
-}
-
-export type Property = {
-    name: string,
-    type: string,
-}
-
-type ObjectInfo = {
-    object: any,
-    properties: {Property}
-}
-
-local function getSourceInfo(lightSource: string, lightSourceObject: types.LightSourceObject?): ObjectInfo?
-    if lightSource == "sun" or lightSource == "moon" then
-        return {
-            object = Lighting,
-            properties = {
-                { name = "Brightness", type = "number" },
-                { name = "Ambient", type = "Color3" },
-                { name = "OutdoorAmbient", type = "Color3" },
-            }
-        }
-    elseif lightSource == "object" and lightSourceObject then
-        local properties: {Property} = {
-            { name = "Color", type = "Color3" },
-            { name = "Brightness", type = "number" },
-            { name = "Range", type = "number" },
-            { name = "Shadows", type = "boolean" },
-        }
-
-        if lightSourceObject.light:IsA("SpotLight") or lightSourceObject.light:IsA("SurfaceLight") then
-            table.insert(properties, 3, { name = "Angle", type = "number" })
-        end
-
-        return {
-            object = lightSourceObject.light,
-            properties = properties,
-        }
-    else
-        return nil
-    end
-end
-
 local function propertyInput(props: {
-    object: any,
-    property: Property,
+    object: () -> any,
+    property: string,
     order: number | () -> number,
 })
     local object = props.object
     if not object then return nil end
 
-    local property = props.property
-    local value = vide.source(object[property.name])
+    local spec = Properties.getSpec(props.property)
+    local value = vide.source(nil :: any)
+
+    vide.effect(function()
+        value(props.object()[props.property])
+    end)
 
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.XY,
@@ -81,7 +38,7 @@ local function propertyInput(props: {
             BackgroundTransparency = 1,
             TextSize = theme.textSize.base,
             FontFace = theme.font.default,
-            Text = property.name,
+            Text = props.property,
             TextColor3 = theme.surface0.foreground,
 
             vide.create "UIPadding" {
@@ -92,7 +49,7 @@ local function propertyInput(props: {
             },
         },
 
-        if property.type == "number" then
+        if spec.type == "number" then
             {
                 numberbox {
                     value = value,
@@ -104,20 +61,20 @@ local function propertyInput(props: {
                 slider {
                     value = value,
                     valueChanged = value,
-                    min = 0,
-                    max = 60,
-                    step = 0.5,
+                    min = spec.min,
+                    max = spec.max,
+                    step = spec.step,
                     native = {
                         Size = UDim2.fromOffset(50, 12)
                     }
                 },
             }
-        elseif property.type == "Color3" then
+        elseif spec.type == "Color3" then
             colorInput {
                 color = value,
                 colorChanged = value,
             }
-        elseif property.type == "boolean" then
+        elseif spec.type == "boolean" then
             checkbox {
                 checked = value,
                 checkedChanged = value,
@@ -127,11 +84,11 @@ local function propertyInput(props: {
     }
 end
 
-return function(props: Props)
-    local objectInfo = vide.derive(function()
-        return getSourceInfo(props.lightSource(), props.lightSourceObject())
-    end)
+export type Props = {
+    objectInfo: () -> Properties.ObjectInfo,
+}
 
+return function(props: Props)
     -- making it a button so it sinks input
     return vide.create "TextButton" {
         AutomaticSize = Enum.AutomaticSize.XY,
@@ -162,14 +119,12 @@ return function(props: Props)
             VerticalAlignment = Enum.VerticalAlignment.Center,
         },
 
-        vide.show(objectInfo, function(info)
-            return vide.values(function() return info().properties end, function(property, index)
-                return propertyInput {
-                    object = info().object,
-                    property = property,
-                    order = index,
-                }
-            end)
+        vide.values(function() return props.objectInfo().properties end, function(property, index)
+            return propertyInput {
+                object = function() return props.objectInfo().object end,
+                property = property,
+                order = index,
+            }
         end),
     }
 end
