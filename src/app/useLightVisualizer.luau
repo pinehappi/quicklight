@@ -109,6 +109,7 @@ local function updatePosition(camera: Camera, entry: LightEntry)
     end
     
     local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
+
     if onScreen and 0 < screenPos.Z and screenPos.Z <= 1000 then
         entry.icon.Visible = true
         local scale = math.clamp(50 / screenPos.Z, 0.2, 1)
@@ -178,12 +179,7 @@ return function(options: LightVisualizerOptions)
             end))
             
             table.insert(connections, light:GetPropertyChangedSignal("Parent"):Connect(function()
-                local newParent = light.Parent
-                if newParent and (newParent:IsA("BasePart") or newParent:IsA("Attachment")) then
-                    updateAdornee(entry)
-                else
-                    removeLight(light)
-                end
+                updateAdornee(entry)
             end))
             updateAdornee(entry)
 
