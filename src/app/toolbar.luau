@@ -4,6 +4,7 @@ local icon = require(script.Parent.base.icon)
 local layerContext = require(script.Parent.layerContext)
 local theme = require(script.Parent.theme)
 local toolOrdering = require(script.Parent.Parent.toolOrdering)
+local ghostButton = require(script.Parent.base.ghostButton)
 local tween = require(script.Parent.tween)
 
 local toolIcons = {
@@ -21,7 +22,20 @@ local lightSourceIcons = {
     moon = "rbxassetid://17650930453",
 }
 
+local function separator()
+    return vide.create "Frame" {
+        BackgroundColor3 = theme.surface0.stroke,
+        Size = function()
+            return UDim2.fromOffset(1, theme.textSize.base() + theme.spacing.sm())
+        end,
+    }
+end
+
 export type Props = {
+    isPropertiesAvailable: () -> boolean,
+    isPropertiesEnabled: () -> boolean,
+    propertiesEnabledChanged: (boolean) -> (),
+    
     tools: () -> {string},
     tool: () -> string?,
     toolSelected: (string?) -> (),
@@ -101,12 +115,7 @@ return function(props: Props)
             end),
         },
 
-        vide.create "Frame" {
-            BackgroundColor3 = theme.surface0.stroke,
-            Size = function()
-                return UDim2.fromOffset(1, theme.textSize.base() + theme.spacing.sm())
-            end,
-        },
+        separator(),
 
         vide.create "Frame" {
             AutomaticSize = Enum.AutomaticSize.XY,
@@ -184,7 +193,42 @@ return function(props: Props)
                     LayoutOrder = index,
                     toolButton,
                 }, 5
-            end)
+            end),
         },
+
+        vide.show(props.isPropertiesAvailable, function()
+            return {
+        separator(),
+
+        ghostButton {
+            -- it has to go into a frame so that the rotation works
+            icon = vide.create "Frame" {
+                AutomaticSize = Enum.AutomaticSize.XY,
+                BackgroundTransparency = 1,
+                icon {
+                image = "rbxassetid://119090403860693",
+                color = theme.button.ghost.foreground,
+                size = theme.textSize.base,
+                native = {
+                    Rotation = tween(function()
+                        return props.isPropertiesEnabled() and 180 or 0
+                    end, theme.tween.base),
+                }
+            }
+        },
+
+            padding = {
+                left = theme.padding.sm,
+                right = theme.padding.sm,
+                top = theme.padding.sm,
+                bottom = theme.padding.sm,
+            },
+            
+            activated = function()
+                props.propertiesEnabledChanged(not props.isPropertiesEnabled())
+            end,
+        },
+    }
+    end)
     }
 end

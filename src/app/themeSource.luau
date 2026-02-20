@@ -27,9 +27,15 @@ export type Theme = {
         stroke: Color3,
     },
     button: {
-        background: Color3,
-        foreground: Color3,
-        stroke: Color3,
+        secondary: {
+            background: Color3,
+            foreground: Color3,
+            stroke: Color3,
+        },
+        ghost: {
+            background: Color3,
+            foreground: Color3,
+        },
     },
     input: {
         background: Color3,
@@ -73,9 +79,15 @@ local function getTheme(): Theme
             stroke = theme:GetColor(Enum.StudioStyleGuideColor.Border),
         },
         button = {
-            background = theme:GetColor(Enum.StudioStyleGuideColor.Button),
-            foreground = theme:GetColor(Enum.StudioStyleGuideColor.ButtonText),
-            stroke = theme:GetColor(Enum.StudioStyleGuideColor.Border),
+            secondary = {
+                background = theme:GetColor(Enum.StudioStyleGuideColor.Button),
+                foreground = theme:GetColor(Enum.StudioStyleGuideColor.ButtonText),
+                stroke = theme:GetColor(Enum.StudioStyleGuideColor.Border),
+            },
+            ghost = {
+                background = theme:GetColor(Enum.StudioStyleGuideColor.MainText),
+                foreground = theme:GetColor(Enum.StudioStyleGuideColor.MainText),
+            }
         },
         input = {
             background = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground),

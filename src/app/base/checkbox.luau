@@ -16,11 +16,11 @@ return function(props: Props)
         if props.checked() then
             return theme.accent.main()
         elseif isPressing() then
-            return theme.button.background.press()
+            return theme.input.background.press()
         elseif isHovering() then
-            return theme.button.background.hover()
+            return theme.input.background.hover()
         else
-            return theme.button.background.default()
+            return theme.input.background.default()
         end
     end, theme.tween.base)
 
@@ -28,11 +28,11 @@ return function(props: Props)
         if props.checked() then
             return theme.accent.foreground()
         elseif isPressing() then
-            return theme.button.foreground.press()
+            return theme.input.foreground.press()
         elseif isHovering() then
-            return theme.button.foreground.hover()
+            return theme.input.foreground.hover()
         else
-            return theme.button.foreground.default()
+            return theme.input.foreground.default()
         end
     end, theme.tween.base)
     
@@ -40,11 +40,11 @@ return function(props: Props)
         if props.checked() then
             return theme.accent.main()
         elseif isPressing() then
-            return theme.button.stroke.press()
+            return theme.input.stroke.press()
         elseif isHovering() then
-            return theme.button.stroke.hover()
+            return theme.input.stroke.hover()
         else
-            return theme.button.stroke.default()
+            return theme.input.stroke.default()
         end
     end, theme.tween.base)
 

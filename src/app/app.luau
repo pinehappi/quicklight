@@ -268,6 +268,7 @@ return function(props: Props)
         end
     end)
 
+    local isPropertiesEnabled = vide.source(false)
     local objectInfo = vide.derive(function()
         return Properties.getObjectInfo(lightSource(), lightSourceObject())
     end)
@@ -287,13 +288,13 @@ return function(props: Props)
         if not props.on() then
             y -= 60
             -- properties are visible, push up even more
-            if objectInfo() then
+            if isPropertiesEnabled() and objectInfo() then
                 y -= 30
             end
         end
         if isUsingTool() then
             y -= 28
-            if objectInfo() then
+            if isPropertiesEnabled() and objectInfo() then
                 y -= 40
             end
         end
@@ -346,6 +347,10 @@ return function(props: Props)
                         Size = UDim2.fromScale(1, 1),
                         
                         toolbar {
+                            isPropertiesAvailable = function() return not not objectInfo() end,
+                            isPropertiesEnabled = isPropertiesEnabled,
+                            propertiesEnabledChanged = isPropertiesEnabled,
+                            
                             tools = tools,
                             tool = tool,
                             toolSelected = handleToolSelected,
@@ -355,7 +360,7 @@ return function(props: Props)
                             lightSourceSelected = lightSource,
                         },
 
-                        vide.show(function() return objectInfo() end, function(objectInfo: any)
+                        vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
                             return propertyBar {
                                 objectInfo = objectInfo,
                                 propertyChanged = function(property, value)

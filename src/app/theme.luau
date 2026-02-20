@@ -82,47 +82,68 @@ local destroy, theme = vide.root(function()
             end,
         },
         button = {
-            background = {
-                default = function()
-                    return themeSource().button.background
-                end,
-                hover = vide.derive(function()
-                    return Oklab.mix(themeSource().button.background, themeSource().button.foreground, 0.1)
-                end),
-                press = vide.derive(function()
-                    return Oklab.mix(themeSource().button.background, themeSource().surface0.background, 0.1)
-                end),
-                select = function()
-                    return themeSource().accent.main
-                end,
+            secondary = {
+                background = {
+                    default = function()
+                        return themeSource().button.secondary.background
+                    end,
+                    hover = vide.derive(function()
+                        return Oklab.mix(themeSource().button.secondary.background, themeSource().button.secondary.foreground, 0.1)
+                    end),
+                    press = vide.derive(function()
+                        return Oklab.mix(themeSource().button.secondary.background, themeSource().surface0.background, 0.1)
+                    end),
+                    select = function()
+                        return themeSource().accent.main
+                    end,
+                },
+                foreground = {
+                    default = function()
+                        return themeSource().button.secondary.foreground
+                    end,
+                    hover = function()
+                        return themeSource().button.secondary.foreground
+                    end,
+                    press = function()
+                        return themeSource().button.secondary.foreground
+                    end,
+                    select = function()
+                        return themeSource().accent.foreground
+                    end,
+                },
+                stroke = {
+                    default = function()
+                        return themeSource().button.secondary.stroke
+                    end,
+                    hover = function()
+                        return themeSource().button.secondary.stroke
+                    end,
+                    press = vide.derive(function()
+                        return Oklab.mix(themeSource().button.secondary.stroke, themeSource().surface0.background, 0.1)
+                    end),
+                    select = function()
+                        return themeSource().accent.main
+                    end,
+                },
             },
-            foreground = {
-                default = function()
-                    return themeSource().button.foreground
+            ghost = {
+                background = function()
+                    return themeSource().button.ghost.background
                 end,
-                hover = function()
-                    return themeSource().button.foreground
+                foreground = function()
+                    return themeSource().button.ghost.foreground
                 end,
-                press = function()
-                    return themeSource().button.foreground
-                end,
-                select = function()
-                    return themeSource().accent.foreground
-                end,
-            },
-            stroke = {
-                default = function()
-                    return themeSource().button.stroke
-                end,
-                hover = function()
-                    return themeSource().button.stroke
-                end,
-                press = vide.derive(function()
-                    return Oklab.mix(themeSource().button.stroke, themeSource().surface0.background, 0.1)
-                end),
-                select = function()
-                    return themeSource().accent.main
-                end,
+                backgroundTransparency = {
+                    default = function()
+                        return 1
+                    end,
+                    hover = function()
+                        return 0.9
+                    end,
+                    press = function()
+                        return 0.85
+                    end,
+                },
             }
         },
         input = {

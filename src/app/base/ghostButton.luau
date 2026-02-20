@@ -5,8 +5,7 @@ local useButtonState = require(script.Parent.useButtonState)
 
 export type Props = {
     text: string | (() -> string | nil) | nil,
-    icon: (({ color: () -> Color3 }) -> any) | nil,
-    isSelecting: boolean | (() -> boolean) | nil,
+    icon: unknown,
     padding: {
         left: UDim | () -> UDim,
         right: UDim | () -> UDim,
@@ -20,57 +19,25 @@ export type Props = {
 }
 
 return function(props: Props)
-    local style = "secondary"
-    
-    local isSelecting: () -> boolean = 
-        if type(props.isSelecting) == "function" then props.isSelecting
-        else function() return not not props.isSelecting end
     local isHovering, isPressing, buttonStateProps = useButtonState()
     
-    local backgroundColor = tween(function()
-        if isSelecting() then
-            return theme.button[style].background.select()
-        elseif isPressing() then
-            return theme.button[style].background.press()
+    local backgroundTransparency = tween(function()
+        if isPressing() then
+            return theme.button.ghost.backgroundTransparency.press()
         elseif isHovering() then
-            return theme.button[style].background.hover()
+            return theme.button.ghost.backgroundTransparency.hover()
         else
-            return theme.button[style].background.default()
+            return theme.button.ghost.backgroundTransparency.default()
         end
     end, theme.tween.base)
 
-    local foregroundColor = tween(function()
-        if isSelecting() then
-            return theme.button[style].foreground.select()
-        elseif isPressing() then
-            return theme.button[style].foreground.press()
-        elseif isHovering() then
-            return theme.button[style].foreground.hover()
-        else
-            return theme.button[style].foreground.default()
-        end
-    end, theme.tween.base)
-    
-    local strokeColor = tween(function()
-        if isSelecting() then
-            return theme.button[style].stroke.select()
-        elseif isPressing() then
-            return theme.button[style].stroke.press()
-        elseif isHovering() then
-            return theme.button[style].stroke.hover()
-        else
-            return theme.button[style].stroke.default()
-        end
-    end, theme.tween.base)
-    
     return vide.create "TextButton" {
         AutomaticSize = Enum.AutomaticSize.XY,
-        BackgroundColor3 = backgroundColor,
+        BackgroundColor3 = theme.button.ghost.background,
+        BackgroundTransparency = backgroundTransparency,
         Text = "",
 
-        props.icon and props.icon {
-            color = foregroundColor,
-        },
+        props.icon,
 
         vide.show(function()
             return vide.read(props.text)
@@ -79,7 +46,7 @@ return function(props: Props)
                 Text = props.text,
                 AutomaticSize = Enum.AutomaticSize.XY,
                 BackgroundTransparency = 1,
-                TextColor3 = foregroundColor,
+                TextColor3 = theme.button.ghost.foreground,
                 TextSize = theme.textSize.base,
                 FontFace = theme.font.default,
             }
@@ -94,12 +61,6 @@ return function(props: Props)
         
         vide.create "UICorner" {
             CornerRadius = theme.radius.base,
-        },
-        
-        vide.create "UIStroke" {
-            ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-            Color = strokeColor,
-            Thickness = theme.strokeThickness,
         },
 
         vide.create "UIPadding" {
