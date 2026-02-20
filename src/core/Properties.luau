@@ -41,12 +41,12 @@ return {
                 "Color",
                 "Brightness",
                 "Range",
-                "Shadows",
+                --"Shadows",
             }
 
-            if lightSourceObject.light:IsA("SpotLight") or lightSourceObject.light:IsA("SurfaceLight") then
+            --[[if lightSourceObject.light:IsA("SpotLight") or lightSourceObject.light:IsA("SurfaceLight") then
                 table.insert(properties, 3, "Angle")
-            end
+            end]]
 
             return {
                 object = lightSourceObject.light,
