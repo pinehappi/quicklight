@@ -12,6 +12,7 @@ local propertyBar = require(script.Parent.propertyBar)
 local theme = require(script.Parent.theme)
 local toolbar = require(script.Parent.toolbar)
 local tween = require(script.Parent.tween)
+local useLightVisualizer = require(script.Parent.useLightVisualizer)
 
 -- connects events and wires up tools
 local function useTool(
@@ -302,6 +303,7 @@ return function(props: Props)
     end, 0.18, 1)
 
     useLightSourceSelection(props.on, lightSource, lightSourceObject)
+    useLightVisualizer(props.on)
 
     useHotkeys({
         on = props.on,
