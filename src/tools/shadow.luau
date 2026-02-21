@@ -1,9 +1,9 @@
 local types = require(script.Parent.Parent.types)
 local result = require(script.Parent.Parent.result)
 
-return {
-	run = function(initial)
-		return function(current)
+return function(initial, object)
+	return {
+		update = function(current)
 			local lightDirection = initial.sunDirection
 			local wasMoonUp = (initial.sunDirection:Dot(Vector3.new(0, 1, 0))) < 0
 			if wasMoonUp then
@@ -18,8 +18,8 @@ return {
 			).LookVector
 
 			return result.ok({
-				lightInfo = { direction = dir },
+				direction = dir,
 			})
-		end
-	end,
-} :: types.Tool
+		end,
+	}
+end :: types.Tool

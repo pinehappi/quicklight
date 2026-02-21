@@ -1,4 +1,5 @@
 local result = require(script.Parent.result)
+
 export type Cursor =
     | "crosshairs"
     | "default"
@@ -27,19 +28,21 @@ export type ToolState = {
     mouseNormal: Vector3?,
 }
 
-export type LightInfo = {
+export type LightPlacement = {
     direction: Vector3,
     -- for object/pen
     position: Vector3?,
     angle: number?,
 }
 
-export type Tool<GizmoExtra = nil> = {
-    run: (initial: ToolState, object: LightSourceObject?)
-        -> (current: ToolState)
-        -> result.Result<{lightInfo: LightInfo, gizmoExtra: GizmoExtra}, string>,
-    gizmo: ((initial: ToolState, current: () -> ToolState, lightInfo: () -> LightInfo, gizmoExtra: () -> GizmoExtra?) -> unknown)?,
+export type Gizmo = (current: () -> ToolState, placement: () -> LightPlacement) -> Instance
+
+export type ToolHandle = {
+    update: (current: ToolState) -> result.Result<LightPlacement, string>,
+    gizmo: Gizmo?,
 }
+
+export type Tool = (initial: ToolState, object: LightSourceObject?) -> ToolHandle
 
 export type LightSourceObject = {
     container: Attachment | BasePart,

@@ -1,11 +1,8 @@
-local CoreGui = game:GetService("CoreGui")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local Properties = require(script.Parent.Parent.Properties)
-local runTool = require(script.Parent.Parent.runTool)
 local toolOrdering = require(script.Parent.Parent.toolOrdering)
-local tools = require(script.Parent.Parent.tools)
 local types = require(script.Parent.Parent.types)
 local fadeFrame = require(script.Parent.base.fadeFrame)
 local propertyBar = require(script.Parent.propertyBar)
@@ -14,108 +11,7 @@ local toolbar = require(script.Parent.toolbar)
 local tween = require(script.Parent.tween)
 local useLightVisualizer = require(script.Parent.useLightVisualizer)
 
--- connects events and wires up tools
-local function useTool(
-    on: () -> boolean,
-    lightSource: () -> string,
-    tool: () -> string?,
-    lightSourceObject: () -> types.LightSourceObject?
-)
-    local currentAction = vide.source(nil :: {
-        tool: string,
-        initialState: types.ToolState,
-        update: runTool.UpdateToolCallback,
-        -- sources
-        currentState: (() -> types.ToolState) & ((types.ToolState) -> ()),
-        lightInfo: (() -> types.LightInfo) & ((types.LightInfo) -> ()),
-        gizmoExtra: (() -> unknown) & ((unknown) -> ()),
-    }?)
-
-    local function tryUpdate()
-        local action = currentAction()
-        if action then
-            local result = action.update()
-            if result.kind == "success" then
-                action.currentState(result.data.currentState)
-                action.lightInfo(result.data.lightInfo)
-                action.gizmoExtra(result.data.gizmoExtra)
-            end
-        end
-    end
-
-    vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if not on() then return end
-
-        local tool = tool()
-        if not tool then return end
-
-        if currentAction() then return end
-        
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentAction()) then
-            local initialState, update = runTool(tool, lightSource(), lightSourceObject())
-            local connection: RBXScriptConnection
-            connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
-                if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
-                    connection:Disconnect()
-                    local newAction = currentAction()
-                    if newAction and newAction.initialState == initialState then
-                        tryUpdate()
-                        currentAction(nil)
-                    end
-                end
-            end)
-
-            currentAction({
-                tool = tool,
-                initialState = initialState,
-                currentState = vide.source(initialState),
-                lightInfo = vide.source({
-                    direction = Vector3.zero,
-                } :: types.LightInfo),
-                gizmoExtra = vide.source(nil),
-                update = update,
-            })
-            tryUpdate()
-        end
-    end))
-
-    vide.effect(function()
-        local action = currentAction()
-        if not action then return end
-
-        local tool = tools[action.tool]
-        if tool.gizmo then
-            local gizmo = vide.untrack(function()
-                return tool.gizmo(action.initialState, action.currentState, action.lightInfo, action.gizmoExtra) :: GuiObject
-            end)
-            gizmo.Parent = CoreGui
-
-            vide.cleanup(gizmo)
-        end
-
-        vide.cleanup(UserInputService.InputChanged:Connect(function(input)
-            if not on() then return end
-
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                tryUpdate()
-            end
-        end))
-
-        local camera = workspace.CurrentCamera
-        if camera then
-            vide.cleanup(camera:GetPropertyChangedSignal("CFrame"):Connect(function(input)
-                if not on() then return end
-
-                tryUpdate()
-            end))
-        end
-    end)
-
-    return function()
-        return not not currentAction()
-    end
-end
+local useTool = require(script.Parent.useTool)
 
 local NUMBER_KEYCODES = {
     [Enum.KeyCode.One] = 1,
