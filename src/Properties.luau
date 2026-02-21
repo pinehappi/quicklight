@@ -1,5 +1,5 @@
 local Lighting = game:GetService("Lighting")
-local types = require(script.Parent.Parent.types)
+local types = require(script.Parent.types)
 
 export type PropertySpec =
     | { type: "boolean" }
