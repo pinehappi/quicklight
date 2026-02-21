@@ -1,9 +1,9 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
-local result = require(script.Parent.Parent.result)
-local tools = require(script.Parent.Parent.tools)
-local types = require(script.Parent.Parent.types)
+local result = require(script.Parent.result)
+local tools = require(script.Parent.tools)
+local types = require(script.Parent.types)
 
 local function getToolState(ignore: {any}?): types.ToolState
     local camera = workspace.CurrentCamera
@@ -50,22 +50,22 @@ local function updateSkyFromDirection(direction: Vector3, longitudeFactor: numbe
 	Lighting.GeographicLatitude = geographicLatitude 
 end
 
-local function updateLightSource(name: string, lightInfo: types.LightInfo, state: types.ToolState, object: types.LightSourceObject?)
+local function updateLightSource(name: string, placement: types.LightPlacement, state: types.ToolState, object: types.LightSourceObject?)
     if name == "object" then
         if object then
             local distance = 5
-            local position = lightInfo.position or state.mousePosition
+            local position = placement.position or state.mousePosition
             -- TODO: handle when it is not the front face
             local cframe = CFrame.lookAt(
-                position + distance*lightInfo.direction,
+                position + distance*placement.direction,
                 position
             )
 
-            if lightInfo.angle then
+            if placement.angle then
                 if (object.light:IsA("SpotLight") or object.light:IsA("SurfaceLight")) then
-                    (object.light :: any).Angle = lightInfo.angle
+                    (object.light :: any).Angle = placement.angle
                 elseif object.light:IsA("PointLight") then
-                    object.light.Range = math.tan(math.rad(lightInfo.angle/2)) * distance
+                    object.light.Range = math.tan(math.rad(placement.angle/2)) * distance
                 end
             end
             
@@ -76,16 +76,15 @@ local function updateLightSource(name: string, lightInfo: types.LightInfo, state
             end
         end
     elseif name == "sun" then
-        updateSkyFromDirection(lightInfo.direction, -1)
+        updateSkyFromDirection(placement.direction, -1)
     elseif name == "moon" then
-        updateSkyFromDirection(lightInfo.direction, 1)
+        updateSkyFromDirection(placement.direction, 1)
     end
 end
 
 export type UpdateToolResult = {
     currentState: types.ToolState,
-    lightInfo: types.LightInfo,
-    gizmoExtra: unknown,
+    placement: types.LightPlacement,
 }
 
 export type UpdateToolCallback = () -> result.Result<UpdateToolResult, string>
@@ -95,7 +94,7 @@ return function(
     toolName: string,
     lightSourceName: string,
     lightSourceObject: types.LightSourceObject?
-): (types.ToolState, UpdateToolCallback)
+): (types.ToolState, types.Gizmo?, UpdateToolCallback)
     local tool = tools[toolName]
     local shouldAppend = false
     local object: types.LightSourceObject
@@ -134,18 +133,18 @@ return function(
     end
     
     local initial = getToolState(object and {object.container})
-    local update = tool.run(initial, object)
+    local handle = tool(initial, object)
     
-    return initial, function()
+    return initial, handle.gizmo, function()
         local current = getToolState(object and {object.container})
-        local updateResult = update(current)
+        local updateResult = handle.update(current)
 
         if updateResult.kind == "success" then
             local recording = ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
             if not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
-                updateLightSource(lightSourceName, updateResult.data.lightInfo, current, object)
+                updateLightSource(lightSourceName, updateResult.data, current, object)
             end)
                 
             if success then
@@ -162,8 +161,7 @@ return function(
 
             return result.ok({
                 currentState = current,
-                lightInfo = updateResult.data.lightInfo,
-                gizmoExtra = updateResult.data.gizmoExtra,
+                placement = updateResult.data,
             })
         else
             return result.error(updateResult.error)

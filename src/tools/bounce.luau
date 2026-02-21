@@ -5,9 +5,9 @@ local arrowGizmo = require(script.Parent.Parent.app.gizmos.arrowGizmo)
 local theme = require(script.Parent.Parent.app.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
-return {
-	run = function()
-		return function(current)
+return function(initial, object)
+	return {
+		update = function(current)
 			local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
 			local dir = CFrame.lookAt(
 				current.mousePosition,
@@ -15,44 +15,44 @@ return {
 			).LookVector
 
 			return result.ok({
-				lightInfo = { direction = dir }
-			 })
-		end
-	end,
-	gizmo = function(initial, current, lightInfo)
-		local horizontalDirection = function()
-			local result = lightInfo().direction:Cross(Vector3.new(0, 1, 0))
-			if math.abs(lightInfo().direction.Unit.Y) > 0.995 then
-				result = Vector3.new(1, 0, 0)
+				direction = dir,
+			})
+		end,
+		gizmo = function(current, placement)
+			local horizontalDirection = function()
+			local result = placement().direction:Cross(Vector3.new(0, 1, 0))
+				if math.abs(placement().direction.Unit.Y) > 0.995 then
+					result = Vector3.new(1, 0, 0)
+				end
+				return result
 			end
-			return result
-		end
 
-		return vide.create "Folder" {
-			arrowGizmo {
-				color = theme.accent.faint,
-				from = function()
-					return current().mousePosition
-				end,
-				to = function()
-					return current().mousePosition + Vector3.new(0, 4, 0)
-				end,
-				startRadius = 0,
-				endRadius = 0.5,
-				thickness = 0.05,
-			},
-			arrowGizmo {
-				color = theme.accent.faint,
-				from = function()
-					return current().mousePosition - 4*horizontalDirection()
-				end,
-				to = function()
-					return current().mousePosition + 4*horizontalDirection()
-				end,
-				startRadius = 0,
-				endRadius = 0,
-				thickness = 0.05,
+			return vide.create "Folder" {
+				arrowGizmo {
+					color = theme.accent.faint,
+					from = function()
+						return current().mousePosition
+					end,
+					to = function()
+						return current().mousePosition + Vector3.new(0, 4, 0)
+					end,
+					startRadius = 0,
+					endRadius = 0.5,
+					thickness = 0.05,
+				},
+				arrowGizmo {
+					color = theme.accent.faint,
+					from = function()
+						return current().mousePosition - 4*horizontalDirection()
+					end,
+					to = function()
+						return current().mousePosition + 4*horizontalDirection()
+					end,
+					startRadius = 0,
+					endRadius = 0,
+					thickness = 0.05,
+				}
 			}
-		}
-	end,
-} :: types.Tool
+		end,
+	}
+end :: types.Tool

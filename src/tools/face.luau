@@ -4,9 +4,9 @@ local arrowGizmo = require(script.Parent.Parent.app.gizmos.arrowGizmo)
 local theme = require(script.Parent.Parent.app.theme)
 local reflect = require(script.Parent.Parent.utils.reflect)
 
-return {
-	run = function()
-		return function(current)
+return function(initial, object)
+	return {
+		update = function(current)
 			local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
 
 			if not current.mouseNormal then
@@ -20,27 +20,27 @@ return {
 			).LookVector
 
 			return result.ok({
-				lightInfo = { direction = dir }
+				direction = dir
 			})
-		end
-	end,
-	gizmo = function(initial, current)
-		return arrowGizmo {
-			color = theme.accent.faint,
-			from = function()
-				return current().mousePosition
-			end,
-			to = function()
-				local normal = current().mouseNormal
-				if normal then
-					return current().mousePosition + 4 * normal
-				else
+		end,
+		gizmo = function(current, placement)
+			return arrowGizmo {
+				color = theme.accent.faint,
+				from = function()
 					return current().mousePosition
-				end
-			end,
-			startRadius = 0.2,
-			endRadius = 0.5,
-			thickness = 0.05,
-		}
-	end,
-} :: types.Tool
+				end,
+				to = function()
+					local normal = current().mouseNormal
+					if normal then
+						return current().mousePosition + 4 * normal
+					else
+						return current().mousePosition
+					end
+				end,
+				startRadius = 0.2,
+				endRadius = 0.5,
+				thickness = 0.05,
+			}
+		end,
+	}
+end :: types.Tool
