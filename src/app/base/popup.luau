@@ -28,14 +28,6 @@ return function(props: Props)
     container.ZIndex = 100
     container.Parent = layerContext()
 
-    -- this is to block viewport interactions
-    local container2 = Instance.new("TextButton")
-    container2.BackgroundTransparency = 1
-    container2.TextTransparency = 1
-    container2.Size = UDim2.fromScale(1, 1)
-    container2.ZIndex = -1
-    container2.Parent = container.Parent
-
     -- text button to block input on the other container
     local mainContainer = Instance.new("TextButton")
     mainContainer.BackgroundTransparency = 1
@@ -94,7 +86,6 @@ return function(props: Props)
 
     vide.cleanup(function()
         container:Destroy()
-        container2:Destroy()
         spy:Destroy()
     end)
 
