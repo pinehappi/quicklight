@@ -46,9 +46,7 @@ return function(props: Props)
         end
     end))
 
-    vide.cleanup(function()
-        tooltip:Destroy()
-    end)
+    vide.cleanup(tooltip)
 
     return nil
 end

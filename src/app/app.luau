@@ -169,7 +169,7 @@ return function(props: Props)
         "moon",
     })
     local lightSourceObject = vide.source(nil :: types.LightSourceObject?)
-    local distance = vide.source(5)
+    local distance = vide.source(8)
     local createLightsEnabled = vide.source(false)
 
     local tools = vide.derive(function()

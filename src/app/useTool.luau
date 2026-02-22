@@ -55,12 +55,14 @@ local function createLightSourceObject(): (types.LightSourceObject, boolean)
     container.BottomSurface = Enum.SurfaceType.Smooth
     container.Anchored = true
     container.CanCollide = false
+    container.CastShadow = false
     container.Name = "LightPart"
     container.Parent = workspace
 
     local light = Instance.new("SpotLight")
     light.Color = Color3.new(1, 1, 1)
     light.Brightness = 1
+    light.Range = 15
     light.Parent = container
     
     if recording then

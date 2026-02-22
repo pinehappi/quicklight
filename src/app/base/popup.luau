@@ -15,7 +15,7 @@ return function(props: Props)
     
     
     local container = Instance.new("Frame")
-    container.InputEnded:Connect(function(input)
+    container.InputBegan:Connect(function(input)
         if
             input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch
