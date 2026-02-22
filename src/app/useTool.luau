@@ -76,15 +76,18 @@ local function createLightSourceObject(): (types.LightSourceObject, boolean)
 end
 
 --- connects events and wires up tools
---- returns a source for whether a tool is in use
-return function(
+--- returns a source for whether a tool is in use and and error if any
+return function(props: {
     on: () -> boolean,
-    lightSource: () -> string,
     tool: () -> string?,
+    lightSource: () -> string,
     lightSourceObject: () -> types.LightSourceObject?,
     distance: () -> number,
-    createLightsEnabled: () -> boolean
-)
+    createLightsEnabled: () -> boolean,
+})
+    local on, tool, lightSource, lightSourceObject, distance, createLightsEnabled =
+        props.on, props.tool, props.lightSource, props.lightSourceObject, props.distance, props.createLightsEnabled
+    
     local session = vide.source(nil :: {
         active: boolean,
         hasCommitted: boolean,
@@ -97,10 +100,16 @@ return function(
         currentState: (() -> types.ToolState) & ((types.ToolState) -> ()),
         placement: (() -> types.LightPlacement) & ((types.LightPlacement) -> ()),
     }?)
+    local toolError = vide.source(nil :: string?)
 
     local function tryUpdate()
         local session = session()
         if session then
+            if session.lightSource == "object" and (not session.lightSourceObject) then
+                toolError("Need to select a light or hold [Shift] to create one!")
+                return
+            end
+            
             local distance = distance()
             local currentState = getToolState({session.lightSourceObject and session.lightSourceObject.container})
             local updateResult = session.handle.update(currentState, distance, session.lightSource)
@@ -128,6 +137,8 @@ return function(
                 -- update sources
                 session.currentState(currentState)
                 session.placement(updateResult.data)
+            else
+                toolError(updateResult.error)
             end
         end
     end
@@ -178,6 +189,7 @@ return function(
                         if gotSession then
                             gotSession.active = false
                             session(gotSession)
+                            toolError(nil)
                         end
                     end
                 end
@@ -252,5 +264,5 @@ return function(
     return function()
         local currentSession = session()
         return not not (currentSession and currentSession.active)
-    end
+    end, toolError
 end

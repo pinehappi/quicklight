@@ -13,6 +13,7 @@ local useLightVisualizer = require(script.Parent.useLightVisualizer)
 
 local useTool = require(script.Parent.useTool)
 local slider = require(script.Parent.base.slider)
+local mouseTooltip = require(script.Parent.mouseTooltip)
 local sidePanel = require(script.Parent.sidePanel)
 
 local NUMBER_KEYCODES = {
@@ -218,7 +219,14 @@ return function(props: Props)
         end
     end
 
-    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject, distance, createLightsEnabled)
+    local isUsingTool, toolError = useTool({
+        on = props.on,
+        tool = tool,
+        lightSource = lightSource,
+        lightSourceObject = lightSourceObject,
+        distance = distance,
+        createLightsEnabled = createLightsEnabled
+    })
 
     local toolbarPosition = vide.spring(function()
         local y = 0
@@ -355,6 +363,14 @@ return function(props: Props)
                             createLightsEnabled = createLightsEnabled,
                             createLightsEnabledChanged = createLightsEnabled,
                         },
+                    }
+                end),
+
+                vide.show(toolError, function(err: () -> string)
+                    return mouseTooltip {
+                        text = function()
+                            return "⚠️ " .. err()
+                        end,
                     }
                 end),
             }, 0.5
