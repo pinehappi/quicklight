@@ -6,14 +6,20 @@ local reflect = require(script.Parent.Parent.utils.reflect)
 
 return function(initial, object)
 	return {
-		update = function(current, distance)
-			local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
-
+		update = function(current, distance, lightSource)
 			if not current.mouseNormal then
 				return result.error("Cursor must be on a face!")
 			end
+			
+			if lightSource == "object" then
+				return result.ok({
+					direction = current.mouseNormal,
+				})
+			end
+			
+			local rayDirection = (current.mousePosition - current.cameraPosition).Unit
 
-			local reflection = reflect(rayDirection.LookVector, current.mouseNormal)
+			local reflection = reflect(rayDirection, current.mouseNormal)
 			local dir = CFrame.lookAt(
 				current.cameraPosition,
 				current.cameraPosition + reflection

@@ -96,7 +96,7 @@ return function(
     
     return initial, handle, function(distance: number)
         local current = getToolState(object and {object.container})
-        local updateResult = handle.update(current, distance)
+        local updateResult = handle.update(current, distance, lightSourceName)
 
         if updateResult.kind == "success" then
             local recording = ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)

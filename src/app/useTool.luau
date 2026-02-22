@@ -131,7 +131,7 @@ return function(
                 and (lightSourceObject.container == currentSession.lightSourceObject.container)
                 and (lightSourceObject.light == currentSession.lightSourceObject.light)
             then
-                local result = currentSession.handle.update(vide.untrack(currentSession.currentState), distance)
+                local result = currentSession.handle.update(vide.untrack(currentSession.currentState), distance, lightSource)
                 if result.kind == "success" then
                     updateLightSource(
                         currentSession.lightSource,

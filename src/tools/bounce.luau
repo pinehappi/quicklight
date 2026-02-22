@@ -7,7 +7,26 @@ local reflect = require(script.Parent.Parent.utils.reflect)
 
 return function(initial, object)
 	return {
-		update = function(current, distance)
+		update = function(current, distance, lightSource)
+			if lightSource == "object" then
+				-- pretty much behaves exactly as "face" in sun/moon mode for objects
+				if not current.mouseNormal then
+					return result.error("Cursor must be on a face!")
+				end
+				
+				local rayDirection = (current.mousePosition - current.cameraPosition).Unit
+
+				local reflection = reflect(rayDirection, current.mouseNormal)
+				local dir = CFrame.lookAt(
+					current.cameraPosition,
+					current.cameraPosition + reflection
+				).LookVector
+
+				return result.ok({
+					direction = dir
+				})
+			end
+			
 			local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
 			local dir = CFrame.lookAt(
 				current.mousePosition,
