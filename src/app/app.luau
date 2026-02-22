@@ -32,6 +32,7 @@ local function useHotkeys(options: {
     tools: () -> {string},
     tool: () -> string?,
     toolSelected: (string?) -> (),
+    createLightsEnabledChanged: (boolean) -> (),
     propertiesEnabledToggled: () -> (),
 })
     vide.cleanup(UserInputService.InputBegan:Connect(function(input, gpe)
@@ -64,6 +65,15 @@ local function useHotkeys(options: {
             end
         elseif input.KeyCode == Enum.KeyCode.P and input:IsModifierKeyDown(Enum.ModifierKey.Shift) then
             options.propertiesEnabledToggled()
+        elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+            options.createLightsEnabledChanged(true)
+        end
+    end))
+
+    vide.cleanup(UserInputService.InputEnded:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+            options.createLightsEnabledChanged(false)
         end
     end))
 end
@@ -112,6 +122,8 @@ local function useLightSourceSelection(
                         container = container,
                         light = light,
                     })
+                else
+                    lightSourceObject(nil)
                 end
             end
 
@@ -156,6 +168,7 @@ return function(props: Props)
     })
     local lightSourceObject = vide.source(nil :: types.LightSourceObject?)
     local distance = vide.source(5)
+    local createLightsEnabled = vide.source(false)
 
     local tools = vide.derive(function()
         return
@@ -204,7 +217,7 @@ return function(props: Props)
         end
     end
 
-    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject, distance)
+    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject, distance, createLightsEnabled)
 
     local toolbarPosition = vide.spring(function()
         local y = 0
@@ -243,6 +256,7 @@ return function(props: Props)
         tools = tools,
         tool = tool,
         toolSelected = handleToolSelected,
+        createLightsEnabledChanged = createLightsEnabled,
         propertiesEnabledToggled = function()
             isPropertiesEnabled(not isPropertiesEnabled())
         end,
