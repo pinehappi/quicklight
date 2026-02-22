@@ -147,7 +147,6 @@ return function(
             local lightSourceObject = lightSourceObject()
             local hasCommitted = false
             if lightSource == "object" and createLightsEnabled() then
-                print(createLightsEnabled())
                 lightSourceObject, hasCommitted = createLightSourceObject()
             end
 

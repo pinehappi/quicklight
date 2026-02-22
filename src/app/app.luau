@@ -13,6 +13,7 @@ local useLightVisualizer = require(script.Parent.useLightVisualizer)
 
 local useTool = require(script.Parent.useTool)
 local slider = require(script.Parent.base.slider)
+local sidePanel = require(script.Parent.sidePanel)
 
 local NUMBER_KEYCODES = {
     [Enum.KeyCode.One] = 1,
@@ -283,9 +284,10 @@ return function(props: Props)
         end
     end))
 
+    local transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow)
     return {
         vide.show(props.on, function()
-            local content = vide.create "Frame" {
+            local top = vide.create "Frame" {
                 BackgroundTransparency = 1,
                 Size = UDim2.fromScale(1, 1),
                 
@@ -329,11 +331,32 @@ return function(props: Props)
             
             return {
                 fadeFrame {
-                    transparency = tween(function() return isUsingTool() and 0.5 or 0 end, theme.tween.slow),
+                    transparency = transparency,
                     position = toolbarPosition,
                     size = UDim2.new(1, 0, 0, 150),
-                    child = content,
-                }
+                    child = top,
+                },
+
+                vide.show(function() return lightSource() == "object" end, function()
+                    return fadeFrame { 
+                        transparency = transparency,
+                        position = vide.spring(function()
+                            if isUsingTool() then
+                                return UDim2.new(0, 0, 1, 30)
+                            else
+                                return UDim2.fromScale(0, 1)
+                            end
+                        end, 0.18, 1),
+                        size = UDim2.new(1, 0, 0, 100),
+                        native = {
+                            AnchorPoint = Vector2.new(0, 1),
+                        },
+                        child = sidePanel {
+                            createLightsEnabled = createLightsEnabled,
+                            createLightsEnabledChanged = createLightsEnabled,
+                        },
+                    }
+                end),
             }, 0.5
         end)
     }
