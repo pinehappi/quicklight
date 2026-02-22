@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local result = require(script.Parent.result)
 local tools = require(script.Parent.tools)
 local types = require(script.Parent.types)
+local updateLightSource = require(script.Parent.updateLightSource)
 
 local function getToolState(ignore: {any}?): types.ToolState
     local camera = workspace.CurrentCamera
@@ -39,62 +40,19 @@ local function getToolState(ignore: {any}?): types.ToolState
 	}
 end
 
-local function updateSkyFromDirection(direction: Vector3, longitudeFactor: number)
-    local latitude = math.atan2(direction.Z, math.sqrt(direction.X^2 + direction.Y^2))
-	local longitude = math.atan2(direction.Y * longitudeFactor, direction.X * longitudeFactor)
-
-	local geographicLatitude = (latitude / math.pi / 2) * 360 + 23.5
-	local clockTime = (longitude / math.pi / 2) * 24 - 6
-
-	Lighting.ClockTime = clockTime % 24
-	Lighting.GeographicLatitude = geographicLatitude 
-end
-
-local function updateLightSource(name: string, placement: types.LightPlacement, state: types.ToolState, object: types.LightSourceObject?)
-    if name == "object" then
-        if object then
-            local distance = 5
-            local position = placement.position or state.mousePosition
-            -- TODO: handle when it is not the front face
-            local cframe = CFrame.lookAt(
-                position + distance*placement.direction,
-                position
-            )
-
-            if placement.angle then
-                if (object.light:IsA("SpotLight") or object.light:IsA("SurfaceLight")) then
-                    (object.light :: any).Angle = placement.angle
-                elseif object.light:IsA("PointLight") then
-                    object.light.Range = math.tan(math.rad(placement.angle/2)) * distance
-                end
-            end
-            
-            if object.container:IsA("BasePart") then
-                object.container.CFrame = cframe
-            elseif object.container:IsA("Attachment") then
-                object.container.WorldCFrame = cframe
-            end
-        end
-    elseif name == "sun" then
-        updateSkyFromDirection(placement.direction, -1)
-    elseif name == "moon" then
-        updateSkyFromDirection(placement.direction, 1)
-    end
-end
-
 export type UpdateToolResult = {
     currentState: types.ToolState,
     placement: types.LightPlacement,
 }
 
-export type UpdateToolCallback = () -> result.Result<UpdateToolResult, string>
+export type UpdateToolCallback = (distance: number) -> result.Result<UpdateToolResult, string>
 
 -- returns a ToolActivity and a function to update it
 return function(
     toolName: string,
     lightSourceName: string,
     lightSourceObject: types.LightSourceObject?
-): (types.ToolState, types.Gizmo?, UpdateToolCallback)
+): (types.ToolState, types.ToolHandle, UpdateToolCallback)
     local tool = tools[toolName]
     local shouldAppend = false
     local object: types.LightSourceObject
@@ -107,7 +65,8 @@ return function(
             if recording then
                 local container = Instance.new("Part")
                 container.Size = Vector3.new(1, 1, 1)
-                container.Transparency = 0.5
+                container.Transparency = 0
+                container.Material = Enum.Material.Neon
                 container.Color = Color3.new(1, 1, 1)
                 container.TopSurface = Enum.SurfaceType.Smooth
                 container.BottomSurface = Enum.SurfaceType.Smooth
@@ -135,16 +94,16 @@ return function(
     local initial = getToolState(object and {object.container})
     local handle = tool(initial, object)
     
-    return initial, handle.gizmo, function()
+    return initial, handle, function(distance: number)
         local current = getToolState(object and {object.container})
-        local updateResult = handle.update(current)
+        local updateResult = handle.update(current, distance)
 
         if updateResult.kind == "success" then
             local recording = ChangeHistoryService:TryBeginRecording(`{lightSourceName} {toolName}`)
             if not recording then return result.error("failed to record") end
             
             local success, err = pcall(function()
-                updateLightSource(lightSourceName, updateResult.data, current, object)
+                updateLightSource(lightSourceName, updateResult.data, current, object, distance)
             end)
                 
             if success then

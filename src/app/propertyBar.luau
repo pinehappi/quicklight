@@ -1,8 +1,8 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
-local ReflectionService = game:GetService("ReflectionService")
 local Selection = game:GetService("Selection")
 local vide = require(script.Parent.Parent.Packages.vide)
-local Properties = require(script.Parent.Parent.core.Properties)
+local Properties = require(script.Parent.Parent.Properties)
+local switchClass = require(script.Parent.Parent.switchClass)
 local buttonGroup = require(script.Parent.base.buttonGroup)
 local theme = require(script.Parent.theme)
 local checkbox = require(script.Parent.base.checkbox)
@@ -10,69 +10,41 @@ local colorInput = require(script.Parent.base.colorInput)
 local numberbox = require(script.Parent.base.numberbox)
 local slider = require(script.Parent.base.slider)
 
-local function propertyInput(props: {
-    object: () -> any,
-    property: string,
-    order: number | () -> number,
+local function input(props: {
+    name: string,
+    spec: Properties.PropertySpec,
+    value: () -> any,
+    valueChanged: (newValue: any, isNewSession: boolean) -> (),
+    native: any,
 })
-    local object = props.object
-    if not object then return nil end
-
-    local spec = Properties.getSpec(props.property)
-    local value = vide.source(nil :: any)
-
-    vide.effect(function()
-        local object = props.object()
-        value(object[props.property])
-        vide.cleanup(object:GetPropertyChangedSignal(props.property):Connect(function()
-            value(object[props.property])
-        end))
-    end)
+    local spec = props.spec
 
     -- session state
-    local isRecordingSession = false
-    local hasCommittedInSession = false
+    local hasSessionStarted = false
+    local hasSessionUpdated = false
     
-    local function startSession()
-        isRecordingSession = true
-        hasCommittedInSession = false
+    local function handleSessionBegan()
+        hasSessionStarted = true
+        hasSessionUpdated = false
     end
 
-    local function endSession()
-        isRecordingSession = false
-        hasCommittedInSession = false
+    local function handleSessionEnded()
+        hasSessionStarted = false
+        hasSessionUpdated = false
     end
 
-    local function updateProperty(newValue: any)
-        local obj = props.object()
-        if not obj then return end
-        
-        local recording = ChangeHistoryService:TryBeginRecording("set " .. props.property)
-        if not recording then
-            warn("Failed to begin recording for " .. props.property)
-            -- Still apply the change
-            obj[props.property] = newValue
-            return
-        end
-        
-        obj[props.property] = newValue
-        
-        local operation = Enum.FinishRecordingOperation.Commit
-        if isRecordingSession and hasCommittedInSession then
-            operation = Enum.FinishRecordingOperation.Append
-        end
-        
-        ChangeHistoryService:FinishRecording(recording, operation)
-        
-        if isRecordingSession then
-            hasCommittedInSession = true
+    local function handleChanged(newValue: any)
+        props.valueChanged(newValue, (not hasSessionStarted) or (not hasSessionUpdated))
+        if hasSessionStarted then
+            hasSessionUpdated = true
         end
     end
 
     return vide.create "Frame" {
         AutomaticSize = Enum.AutomaticSize.XY,
         BackgroundTransparency = 1,
-        LayoutOrder = props.order,
+
+        props.native,
 
         vide.create "UIListLayout" {
             Padding = theme.padding.md,
@@ -86,7 +58,7 @@ local function propertyInput(props: {
             BackgroundTransparency = 1,
             TextSize = theme.textSize.base,
             FontFace = theme.font.default,
-            Text = props.property,
+            Text = props.name,
             TextColor3 = theme.surface0.foreground,
 
             vide.create "UIPadding" {
@@ -100,22 +72,22 @@ local function propertyInput(props: {
         if spec.type == "number" then
             {
                 numberbox {
-                    value = value,
-                    valueChanged = updateProperty,
-                    focused = startSession,
-                    focusLost = endSession,
+                    value = props.value,
+                    valueChanged = handleChanged,
+                    focused = handleSessionBegan,
+                    focusLost = handleSessionEnded,
                     native = {
                         Size = UDim2.fromOffset(50, 0)
                     }
                 },
                 slider {
-                    value = value,
-                    valueChanged = updateProperty,
+                    value = props.value,
+                    valueChanged = handleChanged,
                     min = spec.min,
                     max = spec.max,
                     step = spec.step,
-                    dragBegan = startSession,
-                    dragEnded = endSession,
+                    dragBegan = handleSessionBegan,
+                    dragEnded = handleSessionEnded,
                     native = {
                         Size = UDim2.fromOffset(50, 12)
                     }
@@ -123,78 +95,69 @@ local function propertyInput(props: {
             }
         elseif spec.type == "Color3" then
             colorInput {
-                color = value,
-                colorChanged = updateProperty,
-                dragBegan = startSession,
-                dragEnded = endSession,
-                focused = startSession,
-                focusLost = endSession,
+                color = props.value,
+                colorChanged = handleChanged,
+                dragBegan = handleSessionBegan,
+                dragEnded = handleSessionEnded,
+                focused = handleSessionBegan,
+                focusLost = handleSessionEnded,
             }
         elseif spec.type == "boolean" then
             checkbox {
-                checked = value,
-                checkedChanged = updateProperty,
+                checked = props.value,
+                checkedChanged = handleChanged,
             }
         else
             nil
     }
 end
 
-type LightShortClassName = "point" | "spot" | "surface"
-local longClassNames: {[LightShortClassName]: string} = {
-    point = "PointLight",
-    spot = "SpotLight",
-    surface = "SurfaceLight",
-}
-local function switchClass(light: Light, shortClassName: LightShortClassName): Light?
-    local recording = ChangeHistoryService:TryBeginRecording("convert light")
-    if not recording then return end
-    
-    local longClassName = longClassNames[shortClassName]
-    local oldProperties = ReflectionService:GetPropertiesOfClass(light.ClassName, {
-        ExcludeDisplay = true,
-    })
-    local newProperties = ReflectionService:GetPropertiesOfClass(longClassName, {
-        ExcludeDisplay = true,
-    })
+local function propertyInput(props: {
+    object: () -> any,
+    property: string,
+    native: any,
+})
+    local spec = Properties.getSpec(props.property)
+    local value = vide.source(nil :: any)
 
-    local sharedProperties: {[string]: boolean} = {}
-    
-    for _, property in oldProperties do
-        if sharedProperties[property.Name] == nil then
-            sharedProperties[property.Name] = false
-        end
-    end
-    
-    for _, property in newProperties do
-        if sharedProperties[property.Name] == false then
-            sharedProperties[property.Name] = true
-        end
-    end
+    vide.effect(function()
+        local object = props.object()
+        value(object[props.property])
+        vide.cleanup(object:GetPropertyChangedSignal(props.property):Connect(function()
+            value(object[props.property])
+        end))
+    end)
 
-    local newLight = Instance.new(longClassName) :: Light
+    return input {
+        name = props.property,
+        spec = spec,
+        native = props.native,
 
-    for name, isShared in sharedProperties do
-        if not isShared then continue end
-        pcall(function()
-            (newLight :: any)[name] = (light :: any)[name]
-        end)
-    end
+        value = value,
+        valueChanged = function(newValue, isNewSession)
+            local object = props.object()
+            if not object then return end
 
-    -- convert class name
-    if newLight.Name == light.ClassName then
-        newLight.Name = longClassName
-    end
-
-    light.Parent = nil
-
-    ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
-
-    return newLight
+            local recording = ChangeHistoryService:TryBeginRecording("set " .. props.property)
+            if not recording then
+                warn("Failed to begin recording for " .. props.property)
+                -- Still apply the change
+                object[props.property] = newValue
+                return
+            end
+            
+            object[props.property] = newValue
+            
+            local operation = isNewSession and Enum.FinishRecordingOperation.Commit or Enum.FinishRecordingOperation.Append
+            ChangeHistoryService:FinishRecording(recording, operation)
+        end,
+    }
 end
 
 export type Props = {
     objectInfo: () -> Properties.ObjectInfo,
+    distance: () -> number,
+    distanceChanged: (number) -> (),
 }
 
 return function(props: Props)
@@ -252,31 +215,58 @@ return function(props: Props)
             local object = object()
             return object and object:IsA("Light")
         end, function()
-            return buttonGroup {
-                value = currentClass,
-                valueChanged = function(newValue)
-                    local object = object()
-                    if newValue ~= currentClass() and object and object:IsA("Light") then
-                        local newLight = switchClass(object, newValue :: LightShortClassName)
-                        if newLight then
-                            Selection:Set({newLight})
+            return {
+                buttonGroup {
+                    value = currentClass,
+                    valueChanged = function(newValue)
+                        local object = object()
+                        if newValue ~= currentClass() and object and object:IsA("Light") then
+                            local newLight = switchClass(object, newValue)
+                            if newLight then
+                                Selection:Set({newLight})
+                            end
                         end
-                    end
-                end,
-                options = {
-                    {
-                        value = "point",
-                        text = "Point",
+                    end,
+                    options = {
+                        {
+                            value = "point",
+                            text = "Point",
+                        },
+                        {
+                            value = "spot",
+                            text = "Spot"
+                        },
+                        {
+                            value = "surface",
+                            text = "Surface"
+                        }
                     },
-                    {
-                        value = "spot",
-                        text = "Spot"
+                    native = {
+                        LayoutOrder = -2,
                     },
-                    {
-                        value = "surface",
-                        text = "Surface"
-                    }
                 },
+
+                input {
+                    name = "Distance",
+                    spec = { type = "number", min = 0.1, max = 50, step = 0.1 },
+                    value = props.distance,
+                    valueChanged = function(newDistance, isNewSession)
+                        local recording = ChangeHistoryService:TryBeginRecording("set distance")
+                        if not recording then
+                            warn("Failed to begin recording for distance")
+                            props.distanceChanged(newDistance)
+                            return
+                        end
+                        
+                        -- this relies on the property implicitly updating the light via an effect
+                        -- which is not great but whatever
+                        props.distanceChanged(newDistance)
+                        
+                        local operation = isNewSession and Enum.FinishRecordingOperation.Commit or Enum.FinishRecordingOperation.Append
+                        ChangeHistoryService:FinishRecording(recording, operation)
+                    end,
+                    LayoutOrder = -1,
+                }
             }
         end),
 
@@ -284,7 +274,9 @@ return function(props: Props)
             return propertyInput {
                 object = object,
                 property = property,
-                order = index,
+                native = {
+                    LayoutOrder = index,
+                },
             }
         end),
     }

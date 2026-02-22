@@ -12,6 +12,7 @@ local tween = require(script.Parent.tween)
 local useLightVisualizer = require(script.Parent.useLightVisualizer)
 
 local useTool = require(script.Parent.useTool)
+local slider = require(script.Parent.base.slider)
 
 local NUMBER_KEYCODES = {
     [Enum.KeyCode.One] = 1,
@@ -154,6 +155,7 @@ return function(props: Props)
         "moon",
     })
     local lightSourceObject = vide.source(nil :: types.LightSourceObject?)
+    local distance = vide.source(5)
 
     local tools = vide.derive(function()
         return
@@ -202,7 +204,7 @@ return function(props: Props)
         end
     end
 
-    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject)
+    local isUsingTool = useTool(props.on, lightSource, tool, lightSourceObject, distance)
 
     local toolbarPosition = vide.spring(function()
         local y = 0
@@ -290,8 +292,25 @@ return function(props: Props)
                 vide.show(function() return isPropertiesEnabled() and objectInfo() end, function(objectInfo: any)
                     return propertyBar {
                         objectInfo = objectInfo,
+                        distance = distance,
+                        distanceChanged = distance,
                     }
                 end),
+
+                vide.create "Frame" {
+                    Size = UDim2.fromOffset(200, 30),
+                    Position = UDim2.fromScale(0.5, 0.8),
+                    AnchorPoint = Vector2.new(0.5, 0),
+                    BackgroundTransparency = 1,
+                    
+                    slider {
+                        value = distance,
+                        valueChanged = distance,
+                        min = 1,
+                        max = 50,
+                        step = 1,
+                    }
+                },
             }
             
             return {

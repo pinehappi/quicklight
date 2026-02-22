@@ -7,7 +7,7 @@ local reflect = require(script.Parent.Parent.utils.reflect)
 
 return function(initial, object)
 	return {
-		update = function(current)
+		update = function(current, distance)
 			local reflection = reflect(current.mouseDirection, Vector3.new(0,1,0))
 			local dir = CFrame.lookAt(
 				current.mousePosition,

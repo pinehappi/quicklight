@@ -3,30 +3,35 @@ local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Packages.vide)
 local startTool = require(script.Parent.Parent.startTool)
 local types = require(script.Parent.Parent.types)
+local updateLightSource = require(script.Parent.Parent.updateLightSource)
 
--- connects events and wires up tools
--- returns a source for whether a tool is in use
+--- connects events and wires up tools
+--- returns a source for whether a tool is in use
 return function(
     on: () -> boolean,
     lightSource: () -> string,
     tool: () -> string?,
-    lightSourceObject: () -> types.LightSourceObject?
+    lightSourceObject: () -> types.LightSourceObject?,
+    distance: () -> number
 )
-    local currentAction = vide.source(nil :: {
-        gizmo: types.Gizmo?,
+    local session = vide.source(nil :: {
+        active: boolean,
+        handle: types.ToolHandle,
         update: startTool.UpdateToolCallback,
+        lightSource: string,
+        lightSourceObject: types.LightSourceObject?,
         -- sources
         currentState: (() -> types.ToolState) & ((types.ToolState) -> ()),
         placement: (() -> types.LightPlacement) & ((types.LightPlacement) -> ()),
     }?)
 
     local function tryUpdate()
-        local action = currentAction()
-        if action then
-            local result = action.update()
+        local currentSession = session()
+        if currentSession then
+            local result = currentSession.update(distance())
             if result.kind == "success" then
-                action.currentState(result.data.currentState)
-                action.placement(result.data.placement)
+                currentSession.currentState(result.data.currentState)
+                currentSession.placement(result.data.placement)
             end
         end
     end
@@ -38,26 +43,37 @@ return function(
         local tool = tool()
         if not tool then return end
 
-        if currentAction() then return end
+        local prevSession = session()
+        if prevSession and prevSession.active then return end
         
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and tool and (not currentAction()) then
-            local initialState, gizmo, update = startTool(tool, lightSource(), lightSourceObject())
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and tool then
+            local lightSource = lightSource()
+            local lightSourceObject = lightSourceObject()
+            local initialState, handle, update = startTool(tool, lightSource, lightSourceObject)
 
             local connection: RBXScriptConnection
             connection = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
                 if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
                     connection:Disconnect()
-                    local newAction = currentAction()
-                    if newAction and newAction.update == update then
+                    local newSession = session()
+                    if newSession and newSession.update == update then
                         tryUpdate()
-                        currentAction(nil)
+                        
+                        if newSession then
+                            newSession.active = false
+                            session(newSession)
+                        end
                     end
                 end
             end)
 
-            currentAction({
-                gizmo = gizmo,
+            session({
+                active = true,
+                handle = handle,
                 update = update,
+
+                lightSource = lightSource,
+                lightSourceObject = lightSourceObject,
 
                 currentState = vide.source(initialState),
                 placement = vide.source({
@@ -69,13 +85,13 @@ return function(
     end))
 
     vide.effect(function()
-        local action = currentAction()
-        if not action then return end
+        local currentSession = session()
+        if (not currentSession) or (not currentSession.active) then return end
 
-        local gizmo = action.gizmo
+        local gizmo = currentSession.handle.gizmo
         if gizmo then
             local gizmoInstance = vide.untrack(function()
-                return gizmo(action.currentState, action.placement) :: GuiObject
+                return gizmo(currentSession.currentState, currentSession.placement) :: GuiObject
             end)
             gizmoInstance.Parent = CoreGui
 
@@ -100,7 +116,37 @@ return function(
         end
     end)
 
+    vide.effect(function()
+        local distance = distance() -- for tracking
+
+        local currentSession = vide.untrack(session)
+        if currentSession then
+            local lightSource = vide.untrack(lightSource)
+            local lightSourceObject = vide.untrack(lightSourceObject)
+            
+            -- make sure it's the same object
+            if lightSource == currentSession.lightSource
+                and lightSourceObject
+                and currentSession.lightSourceObject
+                and (lightSourceObject.container == currentSession.lightSourceObject.container)
+                and (lightSourceObject.light == currentSession.lightSourceObject.light)
+            then
+                local result = currentSession.handle.update(vide.untrack(currentSession.currentState), distance)
+                if result.kind == "success" then
+                    updateLightSource(
+                        currentSession.lightSource,
+                        result.data,
+                        vide.untrack(currentSession.currentState),
+                        currentSession.lightSourceObject,
+                        distance
+                    )
+                end
+            end
+        end
+    end)
+
     return function()
-        return not not currentAction()
+        local currentSession = session()
+        return not not (currentSession and currentSession.active)
     end
 end

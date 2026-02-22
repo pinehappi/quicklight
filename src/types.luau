@@ -38,7 +38,7 @@ export type LightPlacement = {
 export type Gizmo = (current: () -> ToolState, placement: () -> LightPlacement) -> Instance
 
 export type ToolHandle = {
-    update: (current: ToolState) -> result.Result<LightPlacement, string>,
+    update: (current: ToolState, distance: number) -> result.Result<LightPlacement, string>,
     gizmo: Gizmo?,
 }
 

@@ -38,7 +38,7 @@ return function(initial, object)
 	local verticesCount = vide.source(0)
 
 	return {
-		update = function(current)
+		update = function(current, distance)
 			local normal = current.mouseNormal
 			local isFarEnough = (lastPosition == nil) or ((lastPosition - current.mousePosition).Magnitude > VERTEX_DISTANCE)
 			if (not normal) or (not isFarEnough) then
@@ -57,7 +57,7 @@ return function(initial, object)
 			if object then
 				local angle = nil
 				local offsetVertices = table.create(#vertices)
-				local offset = 5
+				local offset = distance
 				for i, v in vertices do
 					table.insert(offsetVertices, v + normals[i]*offset)
 				end
@@ -109,7 +109,7 @@ return function(initial, object)
 				end
 				
 				placement.angle = angle
-				placement.position = center + (direction*-5)
+				placement.position = center + (direction*-offset)
 			end
 
 			placement.direction = direction

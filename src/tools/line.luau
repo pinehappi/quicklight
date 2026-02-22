@@ -5,7 +5,7 @@ local theme = require(script.Parent.Parent.app.theme)
 
 return function(initial, object)
 	return {
-		update = function(current)
+		update = function(current, distance)
 			local dir = CFrame.lookAt(
 				current.mousePosition,
 				initial.mousePosition

@@ -6,7 +6,7 @@ local reflect = require(script.Parent.Parent.utils.reflect)
 
 return function(initial, object)
 	return {
-		update = function(current)
+		update = function(current, distance)
 			local rayDirection = CFrame.lookAt(current.cameraPosition, current.mousePosition)
 
 			if not current.mouseNormal then

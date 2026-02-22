@@ -3,7 +3,7 @@ local result = require(script.Parent.Parent.result)
 
 return function(initial, object)
 	return {
-		update = function(current)
+		update = function(current, distance)
 			local lightDirection = initial.sunDirection
 			local wasMoonUp = (initial.sunDirection:Dot(Vector3.new(0, 1, 0))) < 0
 			if wasMoonUp then

@@ -1,6 +1,6 @@
 local UserInputService = game:GetService("UserInputService")
 local vide = require(script.Parent.Parent.Parent.Packages.vide)
-return function(update: (percentX: number, percentY: number) -> (), handleDragBegan: (() -> ())?, handleDragEnded: (() -> ())?)
+return function(update: (percentX: number, percentY: number) -> (), dragBegan: (() -> ())?, dragEnded: (() -> ())?)
     local containerSize = Vector2.zero
     local containerPosition = Vector2.zero
 
@@ -18,8 +18,8 @@ return function(update: (percentX: number, percentY: number) -> (), handleDragBe
                 local connection: RBXScriptConnection
                 local dragConnection: RBXScriptConnection
 
-                if handleDragBegan then
-                    handleDragBegan()
+                if dragBegan then
+                    dragBegan()
                 end
 
                 local function updateDrag(x: number, y: number)
@@ -34,8 +34,8 @@ return function(update: (percentX: number, percentY: number) -> (), handleDragBe
                     if input.UserInputState ~= Enum.UserInputState.Begin and input.UserInputState ~= Enum.UserInputState.Change then
                         connection:Disconnect()
                         dragConnection:Disconnect()
-                        if handleDragEnded then
-                            handleDragEnded()
+                        if dragEnded then
+                            dragEnded()
                         end
                     end
                 end)
